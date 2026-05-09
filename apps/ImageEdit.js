@@ -187,9 +187,9 @@ export class EditImage extends plugin {
 
       if (results && results.length > 0) {
         for (const img of results) {
-          if (img.base64) {
-            const buffer = Buffer.from(img.base64, "base64")
-            await this.reply(segment.image(await bufferToFile(buffer)))
+          if (img.dataUrl) {
+            const b64 = img.dataUrl.split(",")[1]
+            await this.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
           } else if (img.url) {
             await this.reply(segment.image(img.url))
           }

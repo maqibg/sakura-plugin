@@ -82,6 +82,16 @@ const configSchema = {
           ],
         },
         timeout: { label: "超时(秒)", type: "number", required: false, help: "默认300，生图慢时可设更大" },
+        moderation: {
+          label: "内容审核",
+          type: "select",
+          required: false,
+          help: "auto=正常审核, low=放宽（二次元/艺术类）",
+          options: [
+            { label: "auto（正常）", value: "auto" },
+            { label: "low（放宽）", value: "low" },
+          ],
+        },
         requirePermission: { label: "需要权限", type: "boolean", required: false },
         whitelist: { label: "白名单群", type: "groupSelect", required: false, help: "填空不限制" },
         blacklist: { label: "黑名单群", type: "groupSelect", required: false, help: "这些群禁止使用" },
@@ -116,6 +126,16 @@ const configSchema = {
       ],
     },
     "EditImage.timeout": { label: "超时(秒)", type: "number", required: false, help: "默认300" },
+    "EditImage.moderation": {
+      label: "内容审核",
+      type: "select",
+      required: false,
+      help: "auto=正常, low=放宽",
+      options: [
+        { label: "auto（正常）", value: "auto" },
+        { label: "low（放宽）", value: "low" },
+      ],
+    },
     "EditImage.requirePermission": { label: "需要权限", type: "boolean" },
     "EditImage.whitelist": { label: "白名单群", type: "groupSelect", help: "填空不限制" },
     "EditImage.blacklist": { label: "黑名单群", type: "groupSelect", help: "这些群禁止使用" },

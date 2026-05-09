@@ -3,6 +3,7 @@ api: "请在这里填写你的 OpenAI API Key"
 baseURL: "https://api.openai.com/v1"
 apiMode: images  # images = /v1/images/edits，responses = /v1/responses
 timeout: 300  # 超时秒数，gpt-image-2 生图可能需 2-5 分钟
+moderation: auto  # auto=正常审核, low=放宽审核(二次元/艺术类)
 requirePermission: false
 # 白名单：填写群号后，只有这些群可以使用修图功能。留空不限制
 whitelist: []
