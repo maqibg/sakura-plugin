@@ -163,6 +163,7 @@ export function supportGuoba() {
                   ],
                 },
               },
+              { field: "timeout", label: "超时(秒)", component: "InputNumber", required: false, bottomHelpMessage: "默认300，生图慢时可设置更大值", componentProps: { min: 30, max: 900 } },
               { field: "requirePermission", label: "需要权限", component: "Switch", required: false },
               { field: "whitelist", label: "白名单群", component: "GSelectGroup", required: false, bottomHelpMessage: "只有这些群可以使用，留空不限制", componentProps: { multiple: true } },
               { field: "blacklist", label: "黑名单群", component: "GSelectGroup", required: false, bottomHelpMessage: "这些群禁止使用", componentProps: { multiple: true } },
