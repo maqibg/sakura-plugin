@@ -246,6 +246,28 @@ export class EditImage extends plugin {
     let textBuffer = ""
     let lastReplyTime = Date.now()
 
+    const extractImages = (content) => {
+      if (!Array.isArray(content)) return
+      for (const part of content) {
+        if (part.type === "image_url" && part.image_url?.url) {
+          images.push({ url: part.image_url.url })
+        } else if (part.type === "image" || part.type === "image_generation") {
+          if (part.image_url?.url) images.push({ url: part.image_url.url })
+          if (part.data) images.push({ dataUrl: part.data })
+        } else if (part.inline_data?.data) {
+          images.push({ dataUrl: `data:${part.inline_data.mime_type || "image/png"};base64,${part.inline_data.data}` })
+        }
+      }
+    }
+
+    const flushText = async () => {
+      if (textBuffer.trim()) {
+        await e.reply(textBuffer.trim(), true)
+        textBuffer = ""
+        lastReplyTime = Date.now()
+      }
+    }
+
     try {
       while (true) {
         const { done, value } = await reader.read()
@@ -264,53 +286,40 @@ export class EditImage extends plugin {
             const choice = json.choices?.[0]
             if (!choice) continue
 
+            // Check final message first (some providers put image in final chunk)
+            if (choice.message?.content) {
+              extractImages(choice.message.content)
+            }
+
+            // Check delta
             const delta = choice.delta
             if (delta?.content) {
               if (Array.isArray(delta.content)) {
-                for (const part of delta.content) {
-                  if (part.type === "text" && part.text) {
-                    textBuffer += part.text
-                  } else if (part.type === "image_url" && part.image_url?.url) {
-                    images.push({ url: part.image_url.url })
-                  } else if (part.image_url?.url) {
-                    images.push({ url: part.image_url.url })
-                  } else if (part.data) {
-                    images.push({ dataUrl: part.data })
-                  }
-                }
+                extractImages(delta.content)
+                const textPart = delta.content.find(p => p.type === "text")
+                if (textPart?.text) textBuffer += textPart.text
               } else if (typeof delta.content === "string") {
                 textBuffer += delta.content
               }
             }
 
-            if (choice.message?.content) {
-              const msg = choice.message.content
-              if (Array.isArray(msg)) {
-                for (const part of msg) {
-                  if (part.type === "image_url" && part.image_url?.url) {
-                    images.push({ url: part.image_url.url })
-                  } else if (part.data) {
-                    images.push({ dataUrl: part.data })
-                  }
-                }
-              }
+            // Check for image in other delta fields (some providers)
+            if (delta?.image) {
+              if (delta.image.url) images.push({ url: delta.image.url })
+              if (delta.image.data) images.push({ dataUrl: delta.image.data })
             }
           } catch {}
         }
 
         if (textBuffer && Date.now() - lastReplyTime > 2000) {
-          await e.reply(textBuffer.trim(), true)
-          textBuffer = ""
-          lastReplyTime = Date.now()
+          await flushText()
         }
       }
     } finally {
       try { controller.abort() } catch {}
     }
 
-    if (textBuffer.trim()) {
-      images.unshift({ text: textBuffer.trim() })
-    }
+    await flushText()
 
     return images
   }
