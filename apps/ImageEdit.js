@@ -203,8 +203,17 @@ export class EditImage extends plugin {
 
         if (chatResult.stream) {
           const images = await this._processChatStream(e, chatResult)
-          if (images.length === 0) return true
-          results = images
+          if (images.length > 0) {
+            results = images
+          } else {
+            logger.info("[ImageEdit] 流式未返回图片，尝试非流式重试...")
+            const retry = await client.generateWithChat(promptText, imageUrls, { ...options, stream: false })
+            results = Array.isArray(retry) ? retry : []
+          }
+        } else {
+          results = chatResult
+        }
+      } else if (apiMode === "responses") {
         } else {
           results = chatResult
         }
@@ -308,6 +317,12 @@ export class EditImage extends plugin {
               if (delta.image.url) images.push({ url: delta.image.url })
               if (delta.image.data) images.push({ dataUrl: delta.image.data })
             }
+
+            // Debug: log any chunk that might contain image data
+            if (json.choices?.[0]?.message?.content ||
+                delta?.content && (Array.isArray(delta.content) || delta.image)) {
+              logger.debug(`[ImageEdit stream] chunk with potential image: ${data.slice(0, 500)}`)
+            }
           } catch {}
         }
 
@@ -320,6 +335,8 @@ export class EditImage extends plugin {
     }
 
     await flushText()
+
+    logger.info(`[ImageEdit stream] done. text sent, images found: ${images.length}`)
 
     return images
   }
