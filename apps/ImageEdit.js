@@ -55,28 +55,47 @@ export class EditImage extends plugin {
     if (!this.checkAccess(e)) return false
     if (!this.checkPermission(e)) return false
 
-    if (/^#生图/.test(e.msg)) {
-      return this.editImageHandler(e)
+    const userLock = this.task?.userLock !== false
+    const lockKey = userLock
+      ? (e.isGroup
+          ? `sakura:imageedit:lock:${e.group_id}:${e.user_id}`
+          : `sakura:imageedit:lock:private:${e.user_id}`)
+      : null
+
+    if (lockKey) {
+      if (await redis.get(lockKey)) {
+        logger.info(`[ImageEdit] 用户 ${e.user_id} 的上一条生图仍在处理中，本次触发已忽略。`)
+        return false
+      }
+      await redis.set(lockKey, "1", { EX: 120 })
     }
 
-    const tasks = this.task?.tasks || (Array.isArray(this.task) ? this.task : [])
-    if (tasks && Array.isArray(tasks)) {
-      for (const task of tasks) {
-        if (task.trigger) {
-          try {
-            const reg = new RegExp(task.trigger)
-            const match = reg.exec(e.msg)
-            if (match && match.index === 0) {
-              return this.dynamicImageHandler(e, task, match)
+    try {
+      if (/^#生图/.test(e.msg)) {
+        return this.editImageHandler(e)
+      }
+
+      const tasks = this.task?.tasks || (Array.isArray(this.task) ? this.task : [])
+      if (tasks && Array.isArray(tasks)) {
+        for (const task of tasks) {
+          if (task.trigger) {
+            try {
+              const reg = new RegExp(task.trigger)
+              const match = reg.exec(e.msg)
+              if (match && match.index === 0) {
+                return this.dynamicImageHandler(e, task, match)
+              }
+            } catch (error) {
+              logger.error(`正则匹配出错: ${task.trigger}`, error)
             }
-          } catch (error) {
-            logger.error(`正则匹配出错: ${task.trigger}`, error)
           }
         }
       }
-    }
 
-    return false
+      return false
+    } finally {
+      if (lockKey) await redis.del(lockKey)
+    }
   }
 
   parseArgs(msg) {
