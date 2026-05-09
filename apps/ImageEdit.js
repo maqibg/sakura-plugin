@@ -270,11 +270,35 @@ export class EditImage extends plugin {
     }
 
     const flushText = async () => {
-      if (textBuffer.trim()) {
-        await e.reply(textBuffer.trim(), true)
-        textBuffer = ""
-        lastReplyTime = Date.now()
+      if (!textBuffer.trim()) return
+
+      // Extract markdown embedded images: ![image](data:...)
+      const mdImageRe = /!\[.*?\]\((data:[^)]+)\)/gi
+      const mdImages = []
+      let cleanText = textBuffer
+      let match
+      while ((match = mdImageRe.exec(textBuffer)) !== null) {
+        mdImages.push(match[1])
+        cleanText = cleanText.replace(match[0], "")
       }
+
+      const trimmed = cleanText.trim()
+
+      // Send cleaned text if any
+      if (trimmed) {
+        await e.reply(trimmed, true)
+      }
+
+      // Send extracted images
+      for (const dataUrl of mdImages) {
+        const b64 = dataUrl.split(",")[1]
+        if (b64) {
+          await e.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
+        }
+      }
+
+      textBuffer = ""
+      lastReplyTime = Date.now()
     }
 
     try {
