@@ -71,7 +71,7 @@ export class EditImage extends plugin {
     }
 
     try {
-      if (/^#生图/.test(e.msg)) {
+      if (/^#?生图/.test(e.msg)) {
         return this.editImageHandler(e)
       }
 
@@ -165,7 +165,7 @@ export class EditImage extends plugin {
   }
 
   async editImageHandler(e) {
-    const msg = e.msg.replace(/^#生图/, "").trim()
+    const msg = e.msg.replace(/^#?生图/, "").trim()
     const imageUrls = await getImg(e, true)
     const { size, quality, outputFormat, n, promptText } = this.parseArgs(msg)
 
