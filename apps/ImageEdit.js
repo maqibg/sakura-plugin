@@ -176,9 +176,20 @@ export class EditImage extends plugin {
     try {
       const client = new OpenAIImageClient(imageConfig)
       const apiMode = imageConfig.apiMode || "images"
+      const stream = imageConfig.stream !== false
       let results
 
-      if (apiMode === "responses") {
+      if (apiMode === "chat") {
+        const chatResult = await client.generateWithChat(promptText, imageUrls, { ...options, stream })
+
+        if (chatResult.stream) {
+          const images = await this._processChatStream(e, chatResult)
+          if (images.length === 0) return true
+          results = images
+        } else {
+          results = chatResult
+        }
+      } else if (apiMode === "responses") {
         results = await client.generateWithResponses(promptText, imageUrls, options)
       } else if (hasImage) {
         results = await client.edit(promptText, imageUrls, options)
@@ -188,7 +199,9 @@ export class EditImage extends plugin {
 
       if (results && results.length > 0) {
         for (const img of results) {
-          if (img.dataUrl) {
+          if (img.text) {
+            await this.reply(img.text)
+          } else if (img.dataUrl) {
             const b64 = img.dataUrl.split(",")[1]
             await this.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
           } else if (img.url) {
@@ -196,7 +209,7 @@ export class EditImage extends plugin {
           }
         }
       } else {
-        await this.reply("生成失败，未返回有效图片", true, { recallMsg: 10 })
+        await this.reply("生成失败，未返回有效内容", true, { recallMsg: 10 })
       }
     } catch (error) {
       logger.error(`图片生成失败:`, error)
@@ -204,5 +217,82 @@ export class EditImage extends plugin {
     }
 
     return true
+  }
+
+  async _processChatStream(e, chatResult) {
+    const { stream, controller } = chatResult
+    const reader = stream.getReader()
+    const decoder = new TextDecoder()
+    const images = []
+    let textBuffer = ""
+    let lastReplyTime = Date.now()
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split("\n")
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue
+          const data = line.slice(6).trim()
+          if (data === "[DONE]") continue
+
+          try {
+            const json = JSON.parse(data)
+            const choice = json.choices?.[0]
+            if (!choice) continue
+
+            const delta = choice.delta
+            if (delta?.content) {
+              if (Array.isArray(delta.content)) {
+                for (const part of delta.content) {
+                  if (part.type === "text" && part.text) {
+                    textBuffer += part.text
+                  } else if (part.type === "image_url" && part.image_url?.url) {
+                    images.push({ url: part.image_url.url })
+                  } else if (part.image_url?.url) {
+                    images.push({ url: part.image_url.url })
+                  } else if (part.data) {
+                    images.push({ dataUrl: part.data })
+                  }
+                }
+              } else if (typeof delta.content === "string") {
+                textBuffer += delta.content
+              }
+            }
+
+            if (choice.message?.content) {
+              const msg = choice.message.content
+              if (Array.isArray(msg)) {
+                for (const part of msg) {
+                  if (part.type === "image_url" && part.image_url?.url) {
+                    images.push({ url: part.image_url.url })
+                  } else if (part.data) {
+                    images.push({ dataUrl: part.data })
+                  }
+                }
+              }
+            }
+          } catch {}
+        }
+
+        if (textBuffer && Date.now() - lastReplyTime > 2000) {
+          await e.reply(textBuffer.trim(), true)
+          textBuffer = ""
+          lastReplyTime = Date.now()
+        }
+      }
+    } finally {
+      try { controller.abort() } catch {}
+    }
+
+    if (textBuffer.trim()) {
+      images.unshift({ text: textBuffer.trim() })
+    }
+
+    return images
   }
 }
