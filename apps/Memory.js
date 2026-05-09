@@ -52,7 +52,7 @@ export class Memory extends plugin {
     const groupId = e.isGroup ? e.group_id : "private"
     const userId = e.user_id
 
-    const memoryDir = path.join(_path, "plugins", "sakura-plugin", "data", "mimic", String(groupId))
+    const memoryDir = path.join(_path, "plugins", "sakura-plugin", "data", "memory", String(groupId))
     if (!fs.existsSync(memoryDir)) {
       fs.mkdirSync(memoryDir, { recursive: true })
     }
