@@ -49,11 +49,37 @@ export class EditImage extends plugin {
     return true
   }
 
+  checkAccess(e) {
+    if (!e.group_id) return { ok: true }
+
+    const whitelist = (this.task?.whitelist || []).map(String)
+    const blacklist = (this.task?.blacklist || []).map(String)
+    const groupId = String(e.group_id)
+
+    if (blacklist.length > 0 && blacklist.includes(groupId)) {
+      return { ok: false, reason: "本群已被禁止使用生图功能" }
+    }
+
+    if (whitelist.length > 0 && !whitelist.includes(groupId)) {
+      return { ok: false, reason: "本群不在生图白名单中" }
+    }
+
+    return { ok: true }
+  }
+
   async dispatchHandler(e) {
     if (!e.msg) return false
 
-    if (!this.checkAccess(e)) return false
-    if (!this.checkPermission(e)) return false
+    const access = this.checkAccess(e)
+    if (!access.ok) {
+      if (access.reason) this.reply(access.reason, true, { recallMsg: 10 })
+      return true
+    }
+
+    if (!this.checkPermission(e)) {
+      this.reply("你没有使用生图功能的权限", true, { recallMsg: 10 })
+      return true
+    }
 
     const userLock = this.task?.userLock !== false
     const lockKey = userLock
