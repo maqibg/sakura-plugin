@@ -84,7 +84,7 @@ const configSchema = {
         },
         stream: { label: "流式输出", type: "boolean", required: false, help: "仅chat模式有效" },
         userLock: { label: "用户锁", type: "boolean", required: false, help: "默认开启，防止重复触发" },
-        timeout: { label: "超时(秒)", type: "number", required: false, help: "默认300，生图慢时可设更大" },
+        timeout: { label: "超时(分钟)", type: "number", required: false, help: "默认5，最大120" },
         moderation: {
           label: "内容审核",
           type: "select",
@@ -130,7 +130,7 @@ const configSchema = {
       ],
     },
     "EditImage.stream": { label: "流式输出", type: "boolean", required: false, help: "仅chat模式有效" },
-    "EditImage.timeout": { label: "超时(秒)", type: "number", required: false, help: "默认300" },
+    "EditImage.timeout": { label: "超时(分钟)", type: "number", required: false, help: "默认5" },
     "EditImage.stream": { label: "流式输出", type: "boolean", required: false, help: "仅chat模式" },
     "EditImage.userLock": { label: "用户锁", type: "boolean", required: false, help: "默认开启" },
     "EditImage.moderation": {

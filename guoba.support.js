@@ -166,7 +166,7 @@ export function supportGuoba() {
               },
               { field: "stream", label: "流式输出", component: "Switch", required: false, bottomHelpMessage: "仅chat模式有效" },
               { field: "userLock", label: "用户锁", component: "Switch", required: false, bottomHelpMessage: "默认开启，防重复触发" },
-              { field: "timeout", label: "超时(秒)", component: "InputNumber", required: false, bottomHelpMessage: "默认300，生图慢时可设置更大值", componentProps: { min: 30, max: 900 } },
+              { field: "timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
               {
                 field: "moderation",
                 label: "内容审核",
