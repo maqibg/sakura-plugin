@@ -25,7 +25,7 @@ const configSchema = {
     {
       name: "其他",
       icon: "⚙️",
-      configs: ["forwardMessage", "webeditor"],
+      configs: ["webeditor"],
     },
   ],
 
@@ -33,7 +33,6 @@ const configSchema = {
     AI: "AI对话",
     Channels: "AI渠道",
     EditImage: "修图",
-    forwardMessage: "消息转发",
     r18: "R18图片",
     roles: "AI人设",
     webeditor: "配置面板",
@@ -83,6 +82,8 @@ const configSchema = {
           ],
         },
         requirePermission: { label: "需要权限", type: "boolean", required: false },
+        whitelist: { label: "白名单群", type: "groupSelect", required: false, help: "填空不限制" },
+        blacklist: { label: "黑名单群", type: "groupSelect", required: false, help: "这些群禁止使用" },
         tasks: {
           label: "修图提示词",
           type: "array",
@@ -114,6 +115,8 @@ const configSchema = {
       ],
     },
     "EditImage.requirePermission": { label: "需要权限", type: "boolean" },
+    "EditImage.whitelist": { label: "白名单群", type: "groupSelect", help: "填空不限制" },
+    "EditImage.blacklist": { label: "黑名单群", type: "groupSelect", help: "这些群禁止使用" },
     "EditImage.tasks": {
       label: "修图触发词",
       type: "array",
@@ -214,42 +217,6 @@ const configSchema = {
     },
     groupContextLength: { label: "群聊上下文长度", type: "number", min: 1 },
     enableUserLock: { label: "启用用户锁", type: "boolean", help: "防止用户消息并发处理" },
-
-    "forwardMessage.forwardRules": {
-      label: "转发规则",
-      type: "array",
-      itemType: "object",
-      help: "配置消息转发规则",
-      schema: {
-        sourceGroupIds: {
-          label: "来源群号",
-          type: "groupSelect",
-          required: true,
-          help: "输入群号，可添加多个",
-        },
-        targetGroupIds: {
-          label: "目标群号",
-          type: "groupSelect",
-          required: true,
-          help: "输入群号，可添加多个",
-        },
-        enableImage: { label: "开启图片转发", type: "boolean" },
-        enableVideo: { label: "开启视频转发", type: "boolean" },
-        enableRecord: { label: "开启聊天记录转发", type: "boolean" },
-      },
-    },
-    forwardRules: {
-      label: "转发规则",
-      type: "array",
-      itemType: "object",
-      schema: {
-        sourceGroupIds: { label: "来源群号", type: "groupSelect", required: true },
-        targetGroupIds: { label: "目标群号", type: "groupSelect", required: true },
-        enableImage: { label: "开启图片转发", type: "boolean" },
-        enableVideo: { label: "开启视频转发", type: "boolean" },
-        enableRecord: { label: "开启聊天记录转发", type: "boolean" },
-      },
-    },
 
     "webeditor.port": {
       label: "端口号",

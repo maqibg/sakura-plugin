@@ -31,9 +31,27 @@ export class EditImage extends plugin {
     return PermissionManager.hasPermission(e.group_id, e.sender.user_id)
   }
 
+  checkAccess(e) {
+    if (!e.group_id) return true
+
+    const whitelist = this.task?.whitelist || []
+    const blacklist = this.task?.blacklist || []
+
+    if (blacklist.length > 0 && blacklist.includes(String(e.group_id))) {
+      return false
+    }
+
+    if (whitelist.length > 0 && !whitelist.includes(String(e.group_id))) {
+      return false
+    }
+
+    return true
+  }
+
   async dispatchHandler(e) {
     if (!e.msg) return false
 
+    if (!this.checkAccess(e)) return false
     if (!this.checkPermission(e)) return false
 
     if (/^#生图/.test(e.msg)) {

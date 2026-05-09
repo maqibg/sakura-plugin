@@ -3,6 +3,10 @@ api: "请在这里填写你的 OpenAI API Key"
 baseURL: "https://api.openai.com/v1"
 apiMode: images  # images = /v1/images/edits，responses = /v1/responses
 requirePermission: false
+# 白名单：填写群号后，只有这些群可以使用修图功能。留空不限制
+whitelist: []
+# 黑名单：这些群禁止使用修图功能
+blacklist: []
 tasks:
   - trigger: 手办化
     prompt: Please turn this photo into a figure. Behind it, there should be a

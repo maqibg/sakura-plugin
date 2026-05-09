@@ -164,6 +164,8 @@ export function supportGuoba() {
                 },
               },
               { field: "requirePermission", label: "需要权限", component: "Switch", required: false },
+              { field: "whitelist", label: "白名单群", component: "GSelectGroup", required: false, bottomHelpMessage: "只有这些群可以使用，留空不限制", componentProps: { multiple: true } },
+              { field: "blacklist", label: "黑名单群", component: "GSelectGroup", required: false, bottomHelpMessage: "这些群禁止使用", componentProps: { multiple: true } },
             ],
           },
         },
@@ -178,35 +180,6 @@ export function supportGuoba() {
             schemas: [
               { field: "trigger", label: "触发词", component: "Input", required: true },
               { field: "prompt", label: "描述", component: "Input", required: true },
-            ],
-          },
-        },
-        {
-          label: "其他",
-          component: "SOFT_GROUP_BEGIN",
-        },
-        {
-          field: "forwardMessage.forwardRules",
-          label: "转发规则",
-          component: "GSubForm",
-          required: false,
-          componentProps: {
-            multiple: true,
-            schemas: [
-              {
-                field: "sourceGroupIds",
-                label: "来源群组",
-                component: "GSelectGroup",
-                required: true,
-                componentProps: { multiple: true },
-              },
-              {
-                field: "targetGroupIds",
-                label: "目标群组",
-                component: "GSelectGroup",
-                required: true,
-                componentProps: { multiple: true },
-              },
             ],
           },
         },
