@@ -356,7 +356,8 @@ export class Conversationmanagement extends plugin {
       await browser.close()
 
       if (imageBuffer) {
-        await e.reply(segment.image("base64://" + imageBuffer.toString("base64")))
+        const { bufferToFile } = await import("../lib/utils.js")
+        await e.reply(segment.image(await bufferToFile(imageBuffer)))
       } else {
         await this.reply("对话记录图片生成失败。", true, { recallMsg: 10 })
       }

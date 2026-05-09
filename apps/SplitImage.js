@@ -1,5 +1,5 @@
 import plugin from "../../../lib/plugins/plugin.js"
-import { getImg, makeForwardMsg } from "../lib/utils.js"
+import { getImg, makeForwardMsg, bufferToFile } from "../lib/utils.js"
 import sharp from "sharp"
 import axios from "axios"
 
@@ -79,7 +79,7 @@ export class SplitImage extends plugin {
             .toBuffer()
 
           msgList.push({
-            text: segment.image("base64://" + pieceBuffer.toString("base64")),
+            text: segment.image(await bufferToFile(pieceBuffer)),
             senderId: botId,
             senderName: botName,
           })

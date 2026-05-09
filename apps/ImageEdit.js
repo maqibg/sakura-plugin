@@ -1,5 +1,5 @@
 import { OpenAIImageClient } from "../lib/AIUtils/OpenAIImageClient.js"
-import { getImg } from "../lib/utils.js"
+import { getImg, bufferToFile } from "../lib/utils.js"
 import Setting from "../lib/setting.js"
 import cfg from "../../../lib/config/config.js"
 import { PermissionManager } from "../lib/PermissionManager.js"
@@ -170,7 +170,8 @@ export class EditImage extends plugin {
       if (results && results.length > 0) {
         for (const img of results) {
           if (img.base64) {
-            await this.reply(segment.image(`base64://${img.base64}`))
+            const buffer = Buffer.from(img.base64, "base64")
+            await this.reply(segment.image(await bufferToFile(buffer)))
           } else if (img.url) {
             await this.reply(segment.image(img.url))
           }

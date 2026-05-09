@@ -1,5 +1,6 @@
 import { connect } from "puppeteer-real-browser"
 import { FlipImage } from "../lib/ImageUtils/ImageUtils.js"
+import { bufferToFile } from "../lib/utils.js"
 import _ from "lodash"
 
 const IMAGE_SOURCES = {
@@ -109,7 +110,7 @@ export class GetImagePlugin extends plugin {
  
             const flippedBuffer = await FlipImage(imageUrl)
             if (flippedBuffer) {
-              const finalSendResult = await e.reply(segment.image("base64://" + flippedBuffer.toString("base64")))
+              const finalSendResult = await e.reply(segment.image(await bufferToFile(flippedBuffer)))
               if (!finalSendResult?.message_id) {
                 await this.reply("翻转后图片也发送失败，可能图片太色了", true, { recallMsg: 10 })
               }

@@ -3,6 +3,7 @@ import fs from "fs"
 import path from "path"
 import Setting from "../lib/setting.js"
 import { pluginresources } from "../lib/path.js"
+import { bufferToFile } from "../lib/utils.js"
 import _ from "lodash"
 
 export class helpMenu extends plugin {
@@ -144,7 +145,7 @@ export class helpMenu extends plugin {
       })
 
       if (img) {
-        await e.reply(segment.image("base64://" + img.toString("base64")))
+        await e.reply(segment.image(await bufferToFile(img)))
       } else {
         throw new Error("生成图片失败")
       }
