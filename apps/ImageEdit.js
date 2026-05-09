@@ -34,14 +34,15 @@ export class EditImage extends plugin {
   checkAccess(e) {
     if (!e.group_id) return true
 
-    const whitelist = this.task?.whitelist || []
-    const blacklist = this.task?.blacklist || []
+    const whitelist = (this.task?.whitelist || []).map(String)
+    const blacklist = (this.task?.blacklist || []).map(String)
+    const groupId = String(e.group_id)
 
-    if (blacklist.length > 0 && blacklist.includes(String(e.group_id))) {
+    if (blacklist.length > 0 && blacklist.includes(groupId)) {
       return false
     }
 
-    if (whitelist.length > 0 && !whitelist.includes(String(e.group_id))) {
+    if (whitelist.length > 0 && !whitelist.includes(groupId)) {
       return false
     }
 
