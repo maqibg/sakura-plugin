@@ -124,7 +124,7 @@ ${rawChatHistory}`
           const imageBuffer = await page.screenshot({ fullPage: true })
           await browser.close()
 
-          await e.reply(segment.image(imageBuffer))
+          await e.reply(segment.image("base64://" + imageBuffer.toString("base64")))
         } else {
           this.reply("画像分析失败，未能获取到有效的返回结果。", true, { recallMsg: 10 })
         }

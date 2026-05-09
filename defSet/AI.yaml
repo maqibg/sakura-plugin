@@ -1,7 +1,7 @@
 profiles:
   - prefix: "-"
     name: 刻晴
-    Channel: 2.5+
+    Channel: default
     GroupContext: false
     History: true
     Tool: true

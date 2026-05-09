@@ -144,7 +144,7 @@ export class helpMenu extends plugin {
       })
 
       if (img) {
-        await e.reply(segment.image(img))
+        await e.reply(segment.image("base64://" + img.toString("base64")))
       } else {
         throw new Error("生成图片失败")
       }

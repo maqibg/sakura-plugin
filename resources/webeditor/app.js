@@ -2174,7 +2174,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function getAvailableChannels() {
   const channels = []
-  const channelConfigs = ["Channels.openai", "Channels.gemini", "Channels.grok"]
 
   for (const categoryName in categoryCache) {
     const configs = categoryCache[categoryName]
@@ -2184,12 +2183,6 @@ function getAvailableChannels() {
           if (Array.isArray(data.openai)) {
             data.openai.forEach(c => c.name && channels.push(c.name))
           }
-          if (Array.isArray(data.gemini)) {
-            data.gemini.forEach(c => c.name && channels.push(c.name))
-          }
-          if (Array.isArray(data.grok)) {
-            data.grok.forEach(c => c.name && channels.push(c.name))
-          }
         }
       })
     }
@@ -2198,12 +2191,6 @@ function getAvailableChannels() {
   if (channels.length === 0 && currentData && currentConfig === "AI渠道") {
     if (Array.isArray(currentData.openai)) {
       currentData.openai.forEach(c => c.name && channels.push(c.name))
-    }
-    if (Array.isArray(currentData.gemini)) {
-      currentData.gemini.forEach(c => c.name && channels.push(c.name))
-    }
-    if (Array.isArray(currentData.grok)) {
-      currentData.grok.forEach(c => c.name && channels.push(c.name))
     }
   }
 

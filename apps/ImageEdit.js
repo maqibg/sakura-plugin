@@ -1,7 +1,6 @@
-import { GoogleGenAI } from "@google/genai"
+import { OpenAIImageClient } from "../lib/AIUtils/OpenAIImageClient.js"
 import { getImg } from "../lib/utils.js"
 import Setting from "../lib/setting.js"
-import sharp from "sharp"
 import cfg from "../../../lib/config/config.js"
 import { PermissionManager } from "../lib/PermissionManager.js"
 
@@ -9,7 +8,7 @@ export class EditImage extends plugin {
   constructor() {
     super({
       name: "AI图像编辑",
-      dsc: "使用AI模型修改或生成图片",
+      dsc: "使用gpt-image-2修改或生成图片",
       event: "message",
       priority: 1135,
       rule: [
@@ -24,15 +23,10 @@ export class EditImage extends plugin {
   }
 
   checkPermission(e) {
-    if (!this.task?.requirePermission) {
-      return true
-    }
+    if (!this.task?.requirePermission) return true
 
     const masterQQs = Array.isArray(cfg.masterQQ) ? cfg.masterQQ : [cfg.masterQQ]
-
-    if (!e.group_id) {
-      return masterQQs.includes(e.sender.user_id)
-    }
+    if (!e.group_id) return masterQQs.includes(e.sender.user_id)
 
     return PermissionManager.hasPermission(e.group_id, e.sender.user_id)
   }
@@ -40,11 +34,9 @@ export class EditImage extends plugin {
   async dispatchHandler(e) {
     if (!e.msg) return false
 
-    if (!this.checkPermission(e)) {
-      return false
-    }
+    if (!this.checkPermission(e)) return false
 
-    if (/^#i/.test(e.msg)) {
+    if (/^#生图/.test(e.msg)) {
       return this.editImageHandler(e)
     }
 
@@ -69,99 +61,82 @@ export class EditImage extends plugin {
   }
 
   parseArgs(msg) {
-    let aspectRatio = null
-    let imageSize = null
     let promptText = msg
 
-    promptText = promptText.replace(/：/g, ":")
+    const validSizes = ["1024x1024", "1536x1024", "1024x1536", "auto"]
+    const validQualities = ["auto", "low", "medium", "high"]
+    const validFormats = ["png", "jpeg", "webp"]
 
-    const validRatios = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"]
-    const ratioRegex = new RegExp(`(${validRatios.join("|")})`)
+    let size = null
+    let quality = null
+    let outputFormat = null
+    let n = null
 
-    const ratioMatch = promptText.match(ratioRegex)
-    if (ratioMatch) {
-      aspectRatio = ratioMatch[1]
-      promptText = promptText.replace(ratioMatch[0], "").trim()
-    }
-
-    const sizeRegex = /([124])k/i
-    const sizeMatch = promptText.match(sizeRegex)
-    if (sizeMatch) {
-      imageSize = sizeMatch[0].toUpperCase()
-      promptText = promptText.replace(sizeMatch[0], "").trim()
-    }
-
-    return { aspectRatio, imageSize, promptText }
-  }
-
-  async dynamicImageHandler(e, matchedTask, match) {
-    let imageUrls = await getImg(e, true)
-
-    if (!imageUrls || imageUrls.length === 0) {
-      return false
-    }
-
-    const matchedStr = match[0]
-    const remainingMsg = e.msg.slice(matchedStr.length).trim()
-
-    let {
-      aspectRatio: userRatio,
-      imageSize: userSize,
-      promptText: userPrompt,
-    } = this.parseArgs(remainingMsg)
-
-    if ((!userRatio || !userSize) && match.length > 1) {
-      for (let i = 1; i < match.length; i++) {
-        if (match[i]) {
-          const { aspectRatio: groupRatio, imageSize: groupSize } = this.parseArgs(match[i])
-          if (groupRatio && !userRatio) {
-            userRatio = groupRatio
-          }
-          if (groupSize && !userSize) {
-            userSize = groupSize
-          }
-        }
+    for (const s of validSizes) {
+      if (promptText.includes(s)) {
+        size = s
+        promptText = promptText.replace(s, "").trim()
+        break
       }
     }
 
-    let aspectRatio = userRatio || matchedTask.aspectRatio
-    const validRatios = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"]
-
-    if (aspectRatio && !validRatios.includes(aspectRatio)) {
-      aspectRatio = null
+    for (const q of validQualities) {
+      const re = new RegExp(`\\b${q}\\b`, "i")
+      if (re.test(promptText)) {
+        quality = q.toLowerCase()
+        promptText = promptText.replace(re, "").trim()
+        break
+      }
     }
 
-    const imageSize = userSize || "1K"
+    for (const f of validFormats) {
+      const re = new RegExp(`\\b${f}\\b`, "i")
+      if (re.test(promptText)) {
+        outputFormat = f.toLowerCase()
+        promptText = promptText.replace(re, "").trim()
+        break
+      }
+    }
+
+    const nMatch = promptText.match(/\bx(\d{1,2})\b/i)
+    if (nMatch) {
+      n = Math.min(Math.max(parseInt(nMatch[1]), 1), 10)
+      promptText = promptText.replace(nMatch[0], "").trim()
+    }
+
+    return { size, quality, outputFormat, n, promptText }
+  }
+
+  async dynamicImageHandler(e, matchedTask, match) {
+    const imageUrls = await getImg(e, true)
+    if (!imageUrls || imageUrls.length === 0) return false
+
+    const matchedStr = match[0]
+    const remainingMsg = e.msg.slice(matchedStr.length).trim()
+    const { size, quality, outputFormat, n, promptText: userPrompt } = this.parseArgs(remainingMsg)
 
     let finalPrompt = matchedTask.prompt || ""
-
     if (finalPrompt && match) {
       finalPrompt = finalPrompt.replace(/\$(\d+)/g, (_, index) => match[index] || "")
     }
-
     if (userPrompt) {
       finalPrompt = finalPrompt ? `${finalPrompt} ${userPrompt}` : userPrompt
     }
 
-    return this._processAndCallAPI(e, finalPrompt, imageUrls, { aspectRatio, imageSize })
+    return this._processAndCallAPI(e, finalPrompt, imageUrls, { size, quality, outputFormat, n })
   }
 
   async editImageHandler(e) {
-    let msg = e.msg.replace(/^#i/, "").trim()
-    let imageUrls = await getImg(e, true)
-
-    const { aspectRatio, imageSize: parsedSize, promptText } = this.parseArgs(msg)
-
-    const imageSize = parsedSize || "1K"
+    const msg = e.msg.replace(/^#生图/, "").trim()
+    const imageUrls = await getImg(e, true)
+    const { size, quality, outputFormat, n, promptText } = this.parseArgs(msg)
 
     if (!promptText) {
-      await this.reply("请告诉我你想如何修改图片哦~ ", true, {
-        recallMsg: 10,
-      })
+      await this.reply("请告诉我你想如何修改图片哦~", true, { recallMsg: 10 })
       return true
     }
 
-    return this._processAndCallAPI(e, promptText, imageUrls, { aspectRatio, imageSize })
+    return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, n })
   }
 
   async _processAndCallAPI(e, promptText, imageUrls, options = {}) {
@@ -171,156 +146,43 @@ export class EditImage extends plugin {
       await this.reply("🎨 正在进行创作, 请稍候...", false, { recallMsg: 10 })
     }
 
-    const { aspectRatio, imageSize = "1K" } = options
-    const contents = []
+    const imageConfig = this.task
+    if (!imageConfig || !imageConfig.api) {
+      await this.reply("配置错误：未配置 EditImage 的 API Key", true, { recallMsg: 10 })
+      return true
+    }
+
     const hasImage = imageUrls && imageUrls.length > 0
 
-    if (promptText) {
-      contents.push({ text: promptText })
-    }
-
-    if (hasImage) {
-      for (const imageUrl of imageUrls) {
-        try {
-          const { base64Data, finalMimeType } = await this._processImage(imageUrl)
-          contents.push({
-            inlineData: {
-              mimeType: finalMimeType,
-              data: base64Data,
-            },
-          })
-        } catch (error) {
-          logger.error("处理其中一张图片时出错:", error)
-          await this.reply("处理图片时失败，请重试", true, {
-            recallMsg: 10,
-          })
-          return true
-        }
-      }
-    }
-
     try {
-      const imageConfig = this.task
+      const client = new OpenAIImageClient(imageConfig)
+      const apiMode = imageConfig.apiMode || "images"
+      let results
 
-      if (!imageConfig || !imageConfig.api || !imageConfig.model) {
-        throw new Error(
-          "配置错误：未在 'EditImage' 配置中找到有效的 'gemini' 配置或缺少api/model。",
-        )
+      if (apiMode === "responses") {
+        results = await client.generateWithResponses(promptText, imageUrls, options)
+      } else if (hasImage) {
+        results = await client.edit(promptText, imageUrls, options)
+      } else {
+        results = await client.generate(promptText, options)
       }
 
-      let API_KEY = imageConfig.api
-      const GEMINI_MODEL = imageConfig.model
-
-      if (!API_KEY || typeof API_KEY !== "string" || !API_KEY.trim()) {
-        throw new Error("渠道配置中的 API Key 无效。")
-      }
-      API_KEY = API_KEY.trim()
-
-      const callAI = async (apiKey, isVertex) => {
-        const geminiOptions = { apiKey: apiKey }
-
-        if (isVertex) {
-          geminiOptions.vertexai = true
-        }
-
-        if (imageConfig.baseURL) {
-          geminiOptions.httpOptions = {
-            baseUrl: imageConfig.baseURL,
+      if (results && results.length > 0) {
+        for (const img of results) {
+          if (img.base64) {
+            await this.reply(segment.image(`base64://${img.base64}`))
+          } else if (img.url) {
+            await this.reply(segment.image(img.url))
           }
         }
-
-        let ai = new GoogleGenAI(geminiOptions)
-
-        const config = {
-          tools: [{ googleSearch: {} }],
-          responseModalities: ["IMAGE", "TEXT"],
-          imageConfig: {
-            imageSize: imageSize,
-          },
-          safetySettings: [
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
-          ],
-        }
-
-        if (isVertex) {
-          config.imageConfig.outputMimeType = "image/png"
-        }
-
-        if (aspectRatio) {
-          config.imageConfig.aspectRatio = aspectRatio
-        }
-
-        return await ai.models.generateContent({
-          model: GEMINI_MODEL,
-          contents: contents,
-          config: config,
-        })
-      }
-
-      const tryCall = async (apiKey, isVertex) => {
-        try {
-          const res = await callAI(apiKey, isVertex)
-          const img = res.candidates?.[0]?.content?.parts?.find(
-            part => part.inlineData && part.inlineData.mimeType.startsWith("image/"),
-          )
-          return { response: res, imagePart: img, error: null }
-        } catch (e) {
-          return { response: null, imagePart: null, error: e }
-        }
-      }
-
-      const isVertexConfigured = imageConfig.vertex === true
-      let result = await tryCall(API_KEY, isVertexConfigured)
-
-      if ((result.error || !result.imagePart) && !isVertexConfigured && imageConfig.vertexApi) {
-        logger.warn(
-          `Gemini 渠道失败(${result.error?.message || "被拦截"}), 尝试切换到 Vertex 渠道重试...`,
-        )
-        result = await tryCall(imageConfig.vertexApi, true)
-      }
-
-      if (result.error) {
-        throw result.error
-      }
-
-      const response = result.response
-      const imagePart = result.imagePart
-
-      if (imagePart) {
-        const imageData = imagePart.inlineData.data
-        await this.reply(segment.image(`base64://${imageData}`))
       } else {
-        const textPart = response.candidates?.[0]?.content?.parts?.find(part => part.text)
-        const textResponse = textPart ? textPart.text : "请求被拦截，请更换提示词或图片"
-        await this.reply(`${textResponse}`, true, { recallMsg: 10 })
+        await this.reply("生成失败，未返回有效图片", true, { recallMsg: 10 })
       }
     } catch (error) {
-      logger.error(`调用 Gemini API 失败:`, error)
-      await this.reply("创作失败，可能是网络问题或请求超额", true, { recallMsg: 10 })
+      logger.error(`图片生成失败:`, error)
+      await this.reply(`创作失败: ${error.message}`, true, { recallMsg: 10 })
     }
 
     return true
-  }
-
-  async _processImage(imageUrl) {
-    const response = await fetch(imageUrl)
-    if (!response.ok) {
-      throw new Error(`图片下载失败: ${response.statusText}`)
-    }
-    const arrayBuffer = await response.arrayBuffer()
-    let buffer = Buffer.from(arrayBuffer)
-    const contentType = response.headers.get("content-type") || "image/jpeg"
-    let finalMimeType = contentType
-
-    if (contentType === "image/gif") {
-      buffer = await sharp(buffer).toFormat("png").toBuffer()
-      finalMimeType = "image/png"
-    }
-
-    const base64Data = buffer.toString("base64")
-    return { base64Data, finalMimeType }
   }
 }

@@ -79,7 +79,7 @@ export class SplitImage extends plugin {
             .toBuffer()
 
           msgList.push({
-            text: segment.image(pieceBuffer),
+            text: segment.image("base64://" + pieceBuffer.toString("base64")),
             senderId: botId,
             senderName: botName,
           })

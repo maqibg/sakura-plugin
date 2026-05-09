@@ -109,7 +109,7 @@ export class GetImagePlugin extends plugin {
  
             const flippedBuffer = await FlipImage(imageUrl)
             if (flippedBuffer) {
-              const finalSendResult = await e.reply(segment.image(flippedBuffer))
+              const finalSendResult = await e.reply(segment.image("base64://" + flippedBuffer.toString("base64")))
               if (!finalSendResult?.message_id) {
                 await this.reply("翻转后图片也发送失败，可能图片太色了", true, { recallMsg: 10 })
               }

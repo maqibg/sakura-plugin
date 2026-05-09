@@ -1,7 +1,7 @@
-model: gemini-3-pro-image-preview
-api: "请在这里填写你的 Gemini API Key，支持多个"
-vertex: false
-vertexApi: "" # Vertex API Key，填写后如果默认渠道失败将尝试使用 Vertex 重试
+model: gpt-image-2
+api: "请在这里填写你的 OpenAI API Key"
+baseURL: "https://api.openai.com/v1"
+apiMode: images  # images = /v1/images/edits，responses = /v1/responses
 requirePermission: false
 tasks:
   - trigger: 手办化
@@ -12,7 +12,7 @@ tasks:
       computer monitor screen at the back, showing the design sketch of the
       figure. In front of the box, on a round plastic base, place the figure
       version of the photo I gave you, and the figure must be three-dimensional.
-      I’d like the PVC material to be clearly represented. It would be even better
+      I'd like the PVC material to be clearly represented. It would be even better
       if the background is indoors.
   - trigger: 毛绒化
     prompt: Turn the subject from the provided photo into a plush toy made of soft
