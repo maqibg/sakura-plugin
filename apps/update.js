@@ -212,13 +212,15 @@ export class Update extends plugin {
     stdout = stdout.toString()
 
     if (errMsg.includes("Timed out")) {
-      let remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, "")
+      const remoteMatch = errMsg.match(/'(.+?)'/g)
+      let remote = remoteMatch ? remoteMatch[0].replace(/'/g, "") : "未知"
       await this.reply(msg + `\n连接超时：${remote}`)
       return
     }
 
     if (/Failed to connect|unable to access/g.test(errMsg)) {
-      let remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, "")
+      const remoteMatch = errMsg.match(/'(.+?)'/g)
+      let remote = remoteMatch ? remoteMatch[0].replace(/'/g, "") : "未知"
       await this.reply(msg + `\n连接失败：${remote}`)
       return
     }

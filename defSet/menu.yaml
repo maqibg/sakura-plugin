@@ -1,0 +1,25 @@
+title: "sakura菜单"
+description: "一个简单插件"
+categories:
+  - name: "AI功能"
+    commands:
+      - cmd: "- 你好"
+        desc: "触发AI对话（前缀匹配profiles配置）"
+      - cmd: "#生图 提示词"
+        desc: "AI生图/图片编辑"
+      - cmd: "#画像"
+        desc: "群成员画像分析"
+  - name: "图片功能"
+    commands:
+      - cmd: "#来张涩图"
+        desc: "获取随机图片"
+      - cmd: "#分割图"
+        desc: "图片分割发送"
+  - name: "系统"
+    commands:
+      - cmd: "#sakura菜单"
+        desc: "查看帮助菜单"
+      - cmd: "#sakura更新"
+        desc: "插件内更新"
+      - cmd: "#权限管理"
+        desc: "权限相关操作"

@@ -107,7 +107,7 @@ export class Conversationmanagement extends plugin {
     for (const item of history) {
       if (item.role === "user") {
         messagesWithSender.push({
-          text: `${item.parts[0].text}`,
+          text: `${item.parts[0]?.text ?? ""}`,
           senderId: e.user_id,
           senderName: e.sender.card || e.sender.nickname || e.user_id,
         })
@@ -125,7 +125,7 @@ export class Conversationmanagement extends plugin {
           name = e.bot.nickname
         }
         messagesWithSender.push({
-          text: `${item.parts[0].text}`,
+          text: `${item.parts[0]?.text ?? ""}`,
           senderId: e.self_id,
           senderName: name,
         })
@@ -308,7 +308,8 @@ export class Conversationmanagement extends plugin {
 
       let messagesHtml = ""
       for (const item of history) {
-        const textContent = `<pre>${item.parts[0].text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`
+        const partText = item.parts[0]?.text ?? ""
+        const textContent = `<pre>${partText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`
 
         if (item.role === "user") {
           messagesHtml += `
