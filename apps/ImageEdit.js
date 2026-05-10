@@ -24,28 +24,22 @@ export class EditImage extends plugin {
 
   checkPermission(e) {
     if (!this.task?.requirePermission) return true
-
     const masterQQs = Array.isArray(cfg.masterQQ) ? cfg.masterQQ : [cfg.masterQQ]
     if (!e.group_id) return masterQQs.includes(e.sender.user_id)
-
     return PermissionManager.hasPermission(e.group_id, e.sender.user_id)
   }
 
   checkAccess(e) {
     if (!e.group_id) return { ok: true }
-
     const whitelist = (this.task?.whitelist || []).map(String)
     const blacklist = (this.task?.blacklist || []).map(String)
     const groupId = String(e.group_id)
-
     if (blacklist.length > 0 && blacklist.includes(groupId)) {
       return { ok: false, reason: "本群已被禁止使用生图功能" }
     }
-
     if (whitelist.length > 0 && !whitelist.includes(groupId)) {
       return { ok: false, reason: "本群不在生图白名单中" }
     }
-
     return { ok: true }
   }
 
@@ -106,51 +100,39 @@ export class EditImage extends plugin {
     }
   }
 
+  // #参数名（值） or #参数名(值) — supports Chinese & English parens
   parseArgs(msg) {
+    const paramRe = /#(尺寸|质量|格式|审核)[（(]([^）)]+)[）)]/gi
+    const params = {}
     let promptText = msg
 
-    const validSizes = ["1024x1024", "1536x1024", "1024x1536", "auto"]
-    const validQualities = ["auto", "low", "medium", "high"]
-    const validFormats = ["png", "jpeg", "webp"]
-
-    let size = null
-    let quality = null
-    let outputFormat = null
-    let n = null
-
-    for (const s of validSizes) {
-      if (promptText.includes(s)) {
-        size = s
-        promptText = promptText.replace(s, "").trim()
-        break
+    let m
+    while ((m = paramRe.exec(msg)) !== null) {
+      const key = m[1]
+      const value = m[2].trim()
+      switch (key) {
+        case "尺寸": params.size = value; break
+        case "质量": params.quality = value; break
+        case "格式": params.outputFormat = value; break
+        case "审核": params.moderation = value; break
       }
+      promptText = promptText.replace(m[0], "")
     }
 
-    for (const q of validQualities) {
-      const re = new RegExp(`\\b${q}\\b`, "i")
-      if (re.test(promptText)) {
-        quality = q.toLowerCase()
-        promptText = promptText.replace(re, "").trim()
-        break
-      }
+    return { ...params, promptText: promptText.trim() }
+  }
+
+  async editImageHandler(e) {
+    const rawMsg = e.msg.replace(/^#?生图/, "").trim()
+    const { size, quality, outputFormat, moderation, promptText } = this.parseArgs(rawMsg)
+    const imageUrls = await getImg(e, true)
+
+    if (!promptText) {
+      await this.reply("请告诉我你想生成什么图片哦~", true, { recallMsg: 10 })
+      return true
     }
 
-    for (const f of validFormats) {
-      const re = new RegExp(`\\b${f}\\b`, "i")
-      if (re.test(promptText)) {
-        outputFormat = f.toLowerCase()
-        promptText = promptText.replace(re, "").trim()
-        break
-      }
-    }
-
-    const nMatch = promptText.match(/\bx(\d{1,2})\b/i)
-    if (nMatch) {
-      n = Math.min(Math.max(parseInt(nMatch[1]), 1), 10)
-      promptText = promptText.replace(nMatch[0], "").trim()
-    }
-
-    return { size, quality, outputFormat, n, promptText }
+    return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, moderation })
   }
 
   async dynamicImageHandler(e, matchedTask, match) {
@@ -159,7 +141,7 @@ export class EditImage extends plugin {
 
     const matchedStr = match[0]
     const remainingMsg = e.msg.slice(matchedStr.length).trim()
-    const { size, quality, outputFormat, n, promptText: userPrompt } = this.parseArgs(remainingMsg)
+    const { size, quality, outputFormat, moderation, promptText: userPrompt } = this.parseArgs(remainingMsg)
 
     let finalPrompt = matchedTask.prompt || ""
     if (finalPrompt && match) {
@@ -169,20 +151,7 @@ export class EditImage extends plugin {
       finalPrompt = finalPrompt ? `${finalPrompt} ${userPrompt}` : userPrompt
     }
 
-    return this._processAndCallAPI(e, finalPrompt, imageUrls, { size, quality, outputFormat, n })
-  }
-
-  async editImageHandler(e) {
-    const msg = e.msg.replace(/^#?生图/, "").trim()
-    const imageUrls = await getImg(e, true)
-    const { size, quality, outputFormat, n, promptText } = this.parseArgs(msg)
-
-    if (!promptText) {
-      await this.reply("请告诉我你想如何修改图片哦~", true, { recallMsg: 10 })
-      return true
-    }
-
-    return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, n })
+    return this._processAndCallAPI(e, finalPrompt, imageUrls, { size, quality, outputFormat, moderation })
   }
 
   async _processAndCallAPI(e, promptText, imageUrls, options = {}) {
@@ -203,7 +172,6 @@ export class EditImage extends plugin {
     try {
       const client = new OpenAIImageClient(imageConfig)
       const apiMode = imageConfig.apiMode || "images"
-      const stream = imageConfig.stream !== false
       let results
 
       if (apiMode === "responses") {
@@ -235,3 +203,4 @@ export class EditImage extends plugin {
 
     return true
   }
+}
