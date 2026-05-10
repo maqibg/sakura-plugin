@@ -222,10 +222,6 @@ export class EditImage extends plugin {
           results = chatResult
         }
       } else if (apiMode === "responses") {
-        } else {
-          results = chatResult
-        }
-      } else if (apiMode === "responses") {
         results = await client.generateWithResponses(promptText, imageUrls, options)
       } else if (hasImage) {
         results = await client.edit(promptText, imageUrls, options)
