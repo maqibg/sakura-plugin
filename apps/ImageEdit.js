@@ -46,17 +46,6 @@ export class EditImage extends plugin {
   async dispatchHandler(e) {
     if (!e.msg) return false
 
-    const access = this.checkAccess(e)
-    if (!access.ok) {
-      if (access.reason) this.reply(access.reason, true, { recallMsg: 10 })
-      return true
-    }
-
-    if (!this.checkPermission(e)) {
-      this.reply("你没有使用生图功能的权限", true, { recallMsg: 10 })
-      return true
-    }
-
     const userLock = this.task?.userLock !== false
     const lockKey = userLock
       ? (e.isGroup
@@ -74,6 +63,15 @@ export class EditImage extends plugin {
 
     try {
       if (/^#?生图/.test(e.msg)) {
+        const access = this.checkAccess(e)
+        if (!access.ok) {
+          if (access.reason) this.reply(access.reason, true, { recallMsg: 10 })
+          return true
+        }
+        if (!this.checkPermission(e)) {
+          this.reply("你没有使用生图功能的权限", true, { recallMsg: 10 })
+          return true
+        }
         return this.editImageHandler(e)
       }
 
