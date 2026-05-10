@@ -75,14 +75,12 @@ const configSchema = {
           label: "API模式",
           type: "select",
           required: false,
-          help: "images/chat/responses 三种模式",
+          help: "images=/v1/images, responses=/v1/responses",
           options: [
             { label: "images（图片API）", value: "images" },
-            { label: "chat（对话生图）", value: "chat" },
             { label: "responses（新版）", value: "responses" },
           ],
         },
-        stream: { label: "流式输出", type: "boolean", required: false, help: "仅chat模式有效" },
         userLock: { label: "用户锁", type: "boolean", required: false, help: "默认开启，防止重复触发" },
         timeout: { label: "超时(分钟)", type: "number", required: false, help: "默认5，最大120" },
         moderation: {
@@ -129,10 +127,8 @@ const configSchema = {
         { label: "responses（新版）", value: "responses" },
       ],
     },
-    "EditImage.stream": { label: "流式输出", type: "boolean", required: false, help: "仅chat模式有效" },
     "EditImage.timeout": { label: "超时(分钟)", type: "number", required: false, help: "默认5" },
-    "EditImage.stream": { label: "流式输出", type: "boolean", required: false, help: "仅chat模式" },
-    "EditImage.userLock": { label: "用户锁", type: "boolean", required: false, help: "默认开启" },
+    "EditImage.userLock": { label: "用户锁", type: "boolean", required: false },
     "EditImage.moderation": {
       label: "内容审核",
       type: "select",

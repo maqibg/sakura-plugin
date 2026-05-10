@@ -155,16 +155,14 @@ export function supportGuoba() {
                 label: "API模式",
                 component: "Select",
                 required: false,
-                bottomHelpMessage: "images/chat/responses 三种模式",
+                bottomHelpMessage: "images / responses 两种模式",
                 componentProps: {
                   options: [
                     { label: "images（图片API）", value: "images" },
-                    { label: "chat（对话生图）", value: "chat" },
                     { label: "responses（新版）", value: "responses" },
                   ],
                 },
               },
-              { field: "stream", label: "流式输出", component: "Switch", required: false, bottomHelpMessage: "仅chat模式有效" },
               { field: "userLock", label: "用户锁", component: "Switch", required: false, bottomHelpMessage: "默认开启，防重复触发" },
               { field: "timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
               {
