@@ -2,6 +2,11 @@ model: gpt-image-2
 api: "请在这里填写你的 OpenAI API Key"
 baseURL: "https://api.openai.com/v1"
 apiMode: images  # images = /v1/images, responses = /v1/responses
+# 默认参数（用户未通过 #参数（值）指定时生效）
+defaultSize: 1024x1024  # 1024x1024 / 1536x1024 / 1024x1536
+defaultQuality: auto  # auto / low / medium / high
+defaultFormat: png  # png / jpeg / webp
+defaultModeration: auto  # auto / low
 userLock: true  # 用户锁，同一用户上条生图处理完之前忽略新请求
 timeout: 5  # 超时分钟数，最大120
 moderation: auto  # auto=正常审核, low=放宽审核(二次元/艺术类)

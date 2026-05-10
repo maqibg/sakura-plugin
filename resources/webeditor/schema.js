@@ -96,6 +96,10 @@ const configSchema = {
         requirePermission: { label: "需要权限", type: "boolean", required: false },
         whitelist: { label: "白名单群", type: "groupSelect", required: false, help: "填空不限制" },
         blacklist: { label: "黑名单群", type: "groupSelect", required: false, help: "这些群禁止使用" },
+        defaultSize: { label: "默认尺寸", type: "text", required: false, help: "1024x1024" },
+        defaultQuality: { label: "默认质量", type: "text", required: false, help: "auto/low/medium/high" },
+        defaultFormat: { label: "默认格式", type: "text", required: false, help: "png/jpeg/webp" },
+        defaultModeration: { label: "默认审核", type: "text", required: false, help: "auto/low" },
         tasks: {
           label: "修图提示词",
           type: "array",
@@ -110,12 +114,7 @@ const configSchema = {
     },
     "EditImage.model": { label: "模型名称", type: "text", required: true },
     "EditImage.api": { label: "API Key", type: "text", required: true },
-    "EditImage.baseURL": {
-      label: "API地址",
-      type: "text",
-      required: false,
-      help: "默认 https://api.openai.com/v1",
-    },
+    "EditImage.baseURL": { label: "API地址", type: "text", required: false },
     "EditImage.apiMode": {
       label: "API模式",
       type: "select",
@@ -128,6 +127,37 @@ const configSchema = {
       ],
     },
     "EditImage.timeout": { label: "超时(分钟)", type: "number", required: false, help: "默认5" },
+    "EditImage.defaultSize": { label: "默认尺寸", type: "text", required: false, help: "1024x1024/1536x1024/1024x1536" },
+    "EditImage.defaultQuality": {
+      label: "默认质量",
+      type: "select",
+      required: false,
+      options: [
+        { label: "auto", value: "auto" },
+        { label: "low", value: "low" },
+        { label: "medium", value: "medium" },
+        { label: "high", value: "high" },
+      ],
+    },
+    "EditImage.defaultFormat": {
+      label: "默认格式",
+      type: "select",
+      required: false,
+      options: [
+        { label: "png", value: "png" },
+        { label: "jpeg", value: "jpeg" },
+        { label: "webp", value: "webp" },
+      ],
+    },
+    "EditImage.defaultModeration": {
+      label: "默认审核",
+      type: "select",
+      required: false,
+      options: [
+        { label: "auto（正常）", value: "auto" },
+        { label: "low（放宽）", value: "low" },
+      ],
+    },
     "EditImage.userLock": { label: "用户锁", type: "boolean", required: false },
     "EditImage.moderation": {
       label: "内容审核",

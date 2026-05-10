@@ -164,6 +164,10 @@ export function supportGuoba() {
                 },
               },
               { field: "userLock", label: "用户锁", component: "Switch", required: false, bottomHelpMessage: "默认开启，防重复触发" },
+              { field: "defaultSize", label: "默认尺寸", component: "Input", required: false, bottomHelpMessage: "用户未指定时的默认值" },
+              { field: "defaultQuality", label: "默认质量", component: "Input", required: false, bottomHelpMessage: "auto/low/medium/high" },
+              { field: "defaultFormat", label: "默认格式", component: "Input", required: false, bottomHelpMessage: "png/jpeg/webp" },
+              { field: "defaultModeration", label: "默认审核", component: "Select", required: false, bottomHelpMessage: "auto/low", componentProps: { options: [{ label: "auto", value: "auto" }, { label: "low", value: "low" }] } },
               { field: "timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
               {
                 field: "moderation",
