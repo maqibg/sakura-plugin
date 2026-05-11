@@ -75,10 +75,6 @@ export class EditImage extends plugin {
         return this.editImageHandler(e)
       }
 
-      if (/^#?2生图/.test(e.msg)) {
-        return this.secondApiHandler(e)
-      }
-
       const tasks = this.task?.tasks || (Array.isArray(this.task) ? this.task : [])
       if (tasks && Array.isArray(tasks)) {
         for (const task of tasks) {
