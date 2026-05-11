@@ -170,6 +170,22 @@ export function supportGuoba() {
               { field: "defaultModeration", label: "默认审核", component: "Select", required: false, bottomHelpMessage: "auto/low", componentProps: { options: [{ label: "auto", value: "auto" }, { label: "low", value: "low" }] } },
               { field: "timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
               {
+                field: "secondApi",
+                label: "2API渠道",
+                component: "GSubForm",
+                required: false,
+                bottomHelpMessage: "自建代理，#2生图 指令触发，不支持 quality/format/moderation",
+                componentProps: {
+                  multiple: false,
+                  schemas: [
+                    { field: "enabled", label: "启用", component: "Switch", required: false },
+                    { field: "baseURL", label: "API地址", component: "Input", required: true },
+                    { field: "api", label: "API Key", component: "Input", required: true },
+                    { field: "model", label: "模型", component: "Input", required: false },
+                  ],
+                },
+              },
+              {
                 field: "moderation",
                 label: "内容审核",
                 component: "Select",

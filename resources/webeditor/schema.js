@@ -172,6 +172,21 @@ const configSchema = {
     "EditImage.requirePermission": { label: "需要权限", type: "boolean" },
     "EditImage.whitelist": { label: "白名单群", type: "groupSelect", help: "填空不限制" },
     "EditImage.blacklist": { label: "黑名单群", type: "groupSelect", help: "这些群禁止使用" },
+    "EditImage.secondApi": {
+      label: "2API渠道",
+      type: "object",
+      help: "自建代理服务，#2生图 触发，不支持 quality/format/moderation",
+      schema: {
+        enabled: { label: "启用", type: "boolean" },
+        baseURL: { label: "API地址", type: "text", required: true },
+        api: { label: "API Key", type: "text", required: true },
+        model: { label: "模型", type: "text", help: "默认 gpt-image-2" },
+      },
+    },
+    "EditImage.secondApi.enabled": { label: "启用2API", type: "boolean" },
+    "EditImage.secondApi.baseURL": { label: "2API地址", type: "text" },
+    "EditImage.secondApi.api": { label: "2API Key", type: "text" },
+    "EditImage.secondApi.model": { label: "2API模型", type: "text" },
     "EditImage.tasks": {
       label: "修图触发词",
       type: "array",

@@ -75,6 +75,10 @@ export class EditImage extends plugin {
         return this.editImageHandler(e)
       }
 
+      if (/^#?2生图/.test(e.msg)) {
+        return this.secondApiHandler(e)
+      }
+
       const tasks = this.task?.tasks || (Array.isArray(this.task) ? this.task : [])
       if (tasks && Array.isArray(tasks)) {
         for (const task of tasks) {
@@ -131,6 +135,57 @@ export class EditImage extends plugin {
     }
 
     return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, moderation })
+  }
+
+  async secondApiHandler(e) {
+    const msg = e.msg.replace(/^#?2生图/, "").trim()
+    const imageUrls = await getImg(e, true)
+    const promptText = msg
+
+    if (!promptText) {
+      await this.reply("请告诉我你想生成什么图片哦~", true, { recallMsg: 10 })
+      return true
+    }
+
+    const config = this.task
+    if (!config?.secondApi?.enabled || !config.secondApi.api) {
+      await this.reply("2API 渠道未启用，请在 EditImage.yaml 中配置 secondApi", true, { recallMsg: 10 })
+      return true
+    }
+
+    if (e.isGroup && typeof e.group?.setMsgEmojiLike === "function") {
+      await e.group.setMsgEmojiLike(e.message_id, "124")
+    } else {
+      await this.reply("🎨 正在进行创作(2API), 请稍候...", false, { recallMsg: 10 })
+    }
+
+    const secondConfig = config.secondApi
+    const client = new OpenAIImageClient(secondConfig)
+    const hasImage = imageUrls && imageUrls.length > 0
+
+    try {
+      const results = hasImage
+        ? await client.editSimple(promptText, imageUrls)
+        : await client.generateSimple(promptText)
+
+      if (results && results.length > 0) {
+        for (const img of results) {
+          if (img.dataUrl) {
+            const b64 = img.dataUrl.split(",")[1]
+            await e.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
+          } else if (img.url) {
+            await e.reply(segment.image(img.url))
+          }
+        }
+      } else {
+        await this.reply("2API 生成失败，未返回有效内容", true, { recallMsg: 10 })
+      }
+    } catch (error) {
+      logger.error(`[2API] 图片生成失败:`, error)
+      await this.reply(`2API 创作失败: ${error.message}`, true, { recallMsg: 10 })
+    }
+
+    return true
   }
 
   async dynamicImageHandler(e, matchedTask, match) {
