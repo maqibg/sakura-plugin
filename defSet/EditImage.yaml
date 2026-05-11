@@ -1,13 +1,8 @@
 model: gpt-image-2
 api: "请在这里填写你的 OpenAI API Key"
 baseURL: "https://api.openai.com/v1"
-# 2API 渠道（自建代理服务，不支持 quality/format/moderation 参数）
-secondApi:
-  enabled: false
-  baseURL: "http://127.0.0.1:31970/v1"
-  api: "sk-demo"
-  model: "gpt-image-2"
-apiMode: images  # images = /v1/images, responses = /v1/responses
+channel: openai  # openai=主API（支持全参数）, secondApi=2API渠道（不支持 quality/format/moderation）
+apiMode: images  # images = /v1/images, responses = /v1/responses（仅 openai 渠道）
 # 默认参数（用户未通过 #参数（值）指定时生效）
 defaultSize: 1024x1024  # 1024x1024 / 1536x1024 / 1024x1536
 defaultQuality: auto  # auto / low / medium / high

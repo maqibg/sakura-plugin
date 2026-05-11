@@ -134,6 +134,10 @@ export class EditImage extends plugin {
       return true
     }
 
+    if (this.task?.channel === "secondApi") {
+      return this.secondApiHandler(e)
+    }
+
     return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, moderation })
   }
 
@@ -147,9 +151,9 @@ export class EditImage extends plugin {
       return true
     }
 
-    const config = this.task
-    if (!config?.secondApi?.enabled || !config.secondApi.api) {
-      await this.reply("2API 渠道未启用，请在 EditImage.yaml 中配置 secondApi", true, { recallMsg: 10 })
+    const secondConfig = Setting.getConfig("SecondApi")
+    if (!secondConfig?.enabled || !secondConfig.api) {
+      await this.reply("2API 渠道未启用，请在 SecondApi.yaml 中配置", true, { recallMsg: 10 })
       return true
     }
 
@@ -159,7 +163,6 @@ export class EditImage extends plugin {
       await this.reply("🎨 正在进行创作(2API), 请稍候...", false, { recallMsg: 10 })
     }
 
-    const secondConfig = config.secondApi
     const client = new OpenAIImageClient(secondConfig)
     const hasImage = imageUrls && imageUrls.length > 0
 

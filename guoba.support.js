@@ -170,18 +170,15 @@ export function supportGuoba() {
               { field: "defaultModeration", label: "默认审核", component: "Select", required: false, bottomHelpMessage: "auto/low", componentProps: { options: [{ label: "auto", value: "auto" }, { label: "low", value: "low" }] } },
               { field: "timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
               {
-                field: "secondApi",
-                label: "2API渠道",
-                component: "GSubForm",
+                field: "channel",
+                label: "渠道选择",
+                component: "Select",
                 required: false,
-                bottomHelpMessage: "自建代理，#2生图 指令触发，不支持 quality/format/moderation",
+                bottomHelpMessage: "openai=主API(全参数), secondApi=2API(无quality/format/moderation)",
                 componentProps: {
-                  multiple: false,
-                  schemas: [
-                    { field: "enabled", label: "启用", component: "Switch", required: false },
-                    { field: "baseURL", label: "API地址", component: "Input", required: true },
-                    { field: "api", label: "API Key", component: "Input", required: true },
-                    { field: "model", label: "模型", component: "Input", required: false },
+                  options: [
+                    { label: "主API（openai）", value: "openai" },
+                    { label: "2API（secondApi）", value: "secondApi" },
                   ],
                 },
               },
@@ -217,6 +214,36 @@ export function supportGuoba() {
               { field: "prompt", label: "描述", component: "Input", required: true },
             ],
           },
+        },
+        {
+          label: "2API渠道",
+          component: "SOFT_GROUP_BEGIN",
+        },
+        {
+          field: "SecondApi.enabled",
+          label: "启用2API",
+          component: "Switch",
+          required: false,
+        },
+        {
+          field: "SecondApi.baseURL",
+          label: "API地址",
+          component: "Input",
+          required: true,
+          bottomHelpMessage: "如 http://127.0.0.1:31970/v1",
+        },
+        {
+          field: "SecondApi.api",
+          label: "API Key",
+          component: "Input",
+          required: true,
+        },
+        {
+          field: "SecondApi.model",
+          label: "模型",
+          component: "Input",
+          required: false,
+          bottomHelpMessage: "默认 gpt-image-2",
         },
         {
           label: "web编辑器",

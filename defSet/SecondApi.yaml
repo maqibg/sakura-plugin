@@ -1,0 +1,4 @@
+enabled: false
+baseURL: "http://127.0.0.1:31970/v1"
+api: "sk-demo"
+model: "gpt-image-2"
