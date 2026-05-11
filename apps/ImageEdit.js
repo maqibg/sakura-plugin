@@ -152,19 +152,29 @@ export class EditImage extends plugin {
     return this._processAndCallAPI(e, finalPrompt, imageUrls, { size, quality, outputFormat, moderation })
   }
 
-  _getChannelConfig() {
+  _getChannels() {
     const config = this.task
-    const channelName = config?.channel || "default"
+    const rawChannel = config?.channel || "default"
+    const names = rawChannel.split("|").map(s => s.trim()).filter(Boolean)
     const channelsConfig = Setting.getConfig("ImageChannels")
     const channelList = channelsConfig?.openai || []
-    const channel = channelList.find(c => c.name === channelName)
 
-    if (!channel) {
-      const names = channelList.map(c => c.name).join(", ") || "(无)"
-      throw new Error(`修图渠道 "${channelName}" 未找到，可用: ${names}`)
+    const results = []
+    for (const name of names) {
+      const ch = channelList.find(c => c.name === name)
+      if (ch) {
+        results.push({ ...config, ...ch })
+      } else {
+        logger.warn(`[ImageEdit] 渠道 "${name}" 未找到，已跳过`)
+      }
     }
 
-    return { ...config, ...channel }
+    if (results.length === 0) {
+      const allNames = channelList.map(c => c.name).join(", ") || "(无)"
+      throw new Error(`修图渠道均不可用，配置: ${rawChannel}，现有: ${allNames}`)
+    }
+
+    return results
   }
 
   async _processAndCallAPI(e, promptText, imageUrls, options = {}) {
@@ -174,66 +184,75 @@ export class EditImage extends plugin {
       await this.reply("🎨 正在进行生成, 请稍候...", false, { recallMsg: 10 })
     }
 
-    const imageConfig = this._getChannelConfig()
-    if (!imageConfig || !imageConfig.api) {
-      await this.reply("配置错误：修图渠道未配置或渠道名不正确", true, { recallMsg: 10 })
-      return true
-    }
-
+    const channels = this._getChannels()
     const hasImage = imageUrls && imageUrls.length > 0
+    let lastError = null
 
-    try {
-      const client = new OpenAIImageClient(imageConfig)
-      const apiMode = imageConfig.apiMode || "images"
-      const stream = imageConfig.stream !== false
-      let results
+    for (let i = 0; i < channels.length; i++) {
+      const imageConfig = channels[i]
+      const chName = imageConfig.name || `渠道${i + 1}`
 
-      if (apiMode === "secondApi") {
-        results = hasImage
-          ? await client.editSimple(promptText, imageUrls, options)
-          : await client.generateSimple(promptText, options)
-      } else if (apiMode === "chat") {
-        const chatResult = await client.generateWithChat(promptText, imageUrls, { ...options, stream })
-        if (chatResult.stream) {
-          const images = await this._processChatStream(e, chatResult)
-          if (images.length > 0) {
-            results = images
+      if (i > 0) {
+        logger.info(`[ImageEdit] 切换到渠道 "${chName}" (${i + 1}/${channels.length})`)
+        await this.reply(`⏳ 主渠道不可用，正在尝试备用渠道 "${chName}"...`, true, { recallMsg: 10 })
+      }
+
+      try {
+        const client = new OpenAIImageClient(imageConfig)
+        const apiMode = imageConfig.apiMode || "images"
+        const stream = imageConfig.stream !== false
+        let results
+
+        if (apiMode === "secondApi") {
+          results = hasImage
+            ? await client.editSimple(promptText, imageUrls, options)
+            : await client.generateSimple(promptText, options)
+        } else if (apiMode === "chat") {
+          const chatResult = await client.generateWithChat(promptText, imageUrls, { ...options, stream })
+          if (chatResult.stream) {
+            const images = await this._processChatStream(e, chatResult)
+            if (images.length > 0) {
+              results = images
+            } else {
+              logger.info("[ImageEdit] 流式未返回图片，尝试非流式重试...")
+              const retry = await client.generateWithChat(promptText, imageUrls, { ...options, stream: false })
+              results = Array.isArray(retry) ? retry : []
+            }
           } else {
-            logger.info("[ImageEdit] 流式未返回图片，尝试非流式重试...")
-            const retry = await client.generateWithChat(promptText, imageUrls, { ...options, stream: false })
-            results = Array.isArray(retry) ? retry : []
+            results = chatResult
           }
+        } else if (apiMode === "responses") {
+          results = await client.generateWithResponses(promptText, imageUrls, options)
+        } else if (hasImage) {
+          results = await client.edit(promptText, imageUrls, options)
         } else {
-          results = chatResult
+          results = await client.generate(promptText, options)
         }
-      } else if (apiMode === "responses") {
-        results = await client.generateWithResponses(promptText, imageUrls, options)
-      } else if (hasImage) {
-        results = await client.edit(promptText, imageUrls, options)
-      } else {
-        results = await client.generate(promptText, options)
-      }
 
-      if (results && results.length > 0) {
-        for (const img of results) {
-          if (img.text) {
-            await this.reply(img.text)
-          } else if (img.dataUrl) {
-            const b64 = img.dataUrl.split(",")[1]
-            await this.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
-          } else if (img.url) {
-            await this.reply(segment.image(img.url))
+        if (results && results.length > 0) {
+          for (const img of results) {
+            if (img.text) {
+              await this.reply(img.text)
+            } else if (img.dataUrl) {
+              const b64 = img.dataUrl.split(",")[1]
+              await this.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
+            } else if (img.url) {
+              await this.reply(segment.image(img.url))
+            }
           }
+          return true
         }
-      } else {
-        await this.reply("生成失败，未返回有效内容", true, { recallMsg: 10 })
+
+        lastError = new Error(`渠道 "${chName}" 未返回有效内容`)
+      } catch (err) {
+        lastError = err
+        logger.warn(`[ImageEdit] 渠道 "${chName}" 失败: ${err.message}`)
       }
-    } catch (error) {
-      const errMsg = error.name === "ImageAPIError" ? error.message : `未知错误: ${error.message}`
-      logger.error(`图片生成失败:`, error)
-      await this.reply(`生成失败: ${errMsg}`, true, { recallMsg: 10 })
     }
 
+    const errMsg = lastError?.message || "所有渠道均失败"
+    logger.error(`图片生成失败:`, lastError)
+    await this.reply(`生成失败: ${errMsg}${channels.length > 1 ? ` (已尝试 ${channels.length} 个渠道)` : ""}`, true, { recallMsg: 10 })
     return true
   }
 }
