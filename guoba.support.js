@@ -18,14 +18,15 @@ export function supportGuoba() {
 
     configInfo: {
       schemas: [
+        // ==================== AI 渠道 ====================
         {
           label: "AI渠道",
           component: "SOFT_GROUP_BEGIN",
         },
         {
           field: "Channels.openai",
-          label: "OpenAI 兼容渠道",
-          bottomHelpMessage: "支持 OpenAI、DeepSeek、自建服务等 OpenAI 兼容 API。",
+          label: "OpenAI 渠道",
+          bottomHelpMessage: "支持 OpenAI、DeepSeek、自建服务等 OpenAI 兼容 API",
           component: "GSubForm",
           required: false,
           componentProps: {
@@ -34,16 +35,12 @@ export function supportGuoba() {
               { field: "name", label: "渠道名称", component: "Input", required: true },
               { field: "baseURL", label: "API地址", component: "Input", required: true },
               { field: "model", label: "模型名称", component: "Input", required: true },
-              {
-                field: "api",
-                label: "API Key",
-                component: "InputTextArea",
-                required: true,
-                bottomHelpMessage: "支持多个apikey轮询，一行一个",
-              },
+              { field: "api", label: "API Key", component: "InputTextArea", required: true, bottomHelpMessage: "多个apikey一行一个" },
             ],
           },
         },
+
+        // ==================== AI 设定 ====================
         {
           label: "AI设定",
           component: "SOFT_GROUP_BEGIN",
@@ -51,160 +48,97 @@ export function supportGuoba() {
         {
           field: "AI.profiles",
           label: "角色配置",
-          bottomHelpMessage: "配置不同的人格和其设定，可新增或删除角色。",
           component: "GSubForm",
           required: true,
+          bottomHelpMessage: "配置不同的人格和其设定",
           componentProps: {
             multiple: true,
             schemas: [
               { field: "name", label: "角色名称", component: "Input", required: true },
-              {
-                field: "prefix",
-                label: "触发前缀",
-                component: "Input",
-                required: true,
-                bottomHelpMessage: "用于触发该角色的命令前缀",
-              },
-              {
-                field: "Channel",
-                label: "渠道",
-                component: "Input",
-                required: true,
-                bottomHelpMessage: "使用的渠道名称，必须与上方渠道配置中的名称一致",
-              },
-              {
-                field: "Prompt",
-                label: "预设提示词",
-                component: "InputTextArea",
-                required: true,
-                bottomHelpMessage: "角色的核心设定",
-              },
+              { field: "prefix", label: "触发前缀", component: "Input", required: true, bottomHelpMessage: "如 - 代表用 -开头触发" },
+              { field: "Channel", label: "渠道", component: "Input", required: true, bottomHelpMessage: "对应AI渠道中的名称" },
+              { field: "Prompt", label: "预设提示词", component: "InputTextArea", required: true },
               { field: "GroupContext", label: "启用群聊上下文", component: "Switch", required: true },
               { field: "History", label: "启用历史记录", component: "Switch", required: true },
               { field: "Tool", label: "启用工具", component: "Switch", required: true },
             ],
           },
         },
+        { field: "AI.groupContextLength", label: "群聊上下文长度", component: "InputNumber", required: true, componentProps: { min: 1 } },
+        { field: "AI.enableUserLock", label: "用户锁", component: "Switch", required: true, bottomHelpMessage: "防消息并发" },
+        { field: "AI.toolschannel", label: "工具渠道", component: "Input", required: false },
+        { field: "AI.appschannel", label: "应用渠道", component: "Input", required: false },
+        { field: "AI.defaultchannel", label: "默认渠道", component: "Input", required: false },
+
+        // ==================== 修图渠道 ====================
         {
-          field: "AI.groupContextLength",
-          label: "群聊上下文长度",
-          component: "InputNumber",
-          required: true,
-          componentProps: { min: 1 },
-        },
-        {
-          field: "AI.enableUserLock",
-          label: "是否启用用户锁",
-          component: "Switch",
-          required: true,
-          bottomHelpMessage:
-            "启用后，每个用户处理完当前消息前，不会处理该用户的后续消息，直到当前消息处理完毕",
-        },
-        {
-          field: "AI.toolschannel",
-          label: "工具渠道",
-          component: "Input",
-          required: false,
-          bottomHelpMessage: "用于工具功能的AI渠道",
-        },
-        {
-          field: "AI.appschannel",
-          label: "应用渠道",
-          component: "Input",
-          required: false,
-          bottomHelpMessage: "用于应用功能的AI渠道",
-        },
-        {
-          field: "AI.defaultchannel",
-          label: "默认渠道",
-          component: "Input",
-          required: false,
-          bottomHelpMessage: "当指定渠道不可用时使用的备用渠道",
-        },
-        {
-          label: "图片功能",
+          label: "修图渠道",
           component: "SOFT_GROUP_BEGIN",
         },
         {
-          field: "r18.enable",
-          label: "r18功能启用群,影响所有图片功能",
-          component: "GSelectGroup",
-          required: false,
-          componentProps: { multiple: true },
-        },
-        {
-          field: "EditImage",
-          label: "修图API配置",
-          bottomHelpMessage: "配置 OpenAI 兼容的图片生成 API（gpt-image-2 等）",
+          field: "ImageChannels.openai",
+          label: "修图渠道",
           component: "GSubForm",
           required: false,
+          bottomHelpMessage: "可添加多个修图API渠道",
           componentProps: {
-            multiple: false,
+            multiple: true,
             schemas: [
-              { field: "model", label: "模型名称", component: "Input", required: true },
+              { field: "name", label: "渠道名称", component: "Input", required: true },
+              { field: "baseURL", label: "API地址", component: "Input", required: true },
               { field: "api", label: "API Key", component: "Input", required: true },
-              {
-                field: "baseURL",
-                label: "API地址",
-                component: "Input",
-                required: false,
-                bottomHelpMessage: "默认 https://api.openai.com/v1",
-              },
+              { field: "model", label: "模型", component: "Input", required: true },
               {
                 field: "apiMode",
                 label: "API模式",
                 component: "Select",
-                required: false,
-                bottomHelpMessage: "images / responses 两种模式",
+                required: true,
+                bottomHelpMessage: "images/chat/responses/secondApi",
                 componentProps: {
                   options: [
                     { label: "images（图片API）", value: "images" },
+                    { label: "chat（对话生图）", value: "chat" },
                     { label: "responses（新版）", value: "responses" },
+                    { label: "2API（自建代理）", value: "secondApi" },
                   ],
                 },
               },
-              { field: "userLock", label: "用户锁", component: "Switch", required: false, bottomHelpMessage: "默认开启，防重复触发" },
-              { field: "defaultSize", label: "默认尺寸", component: "Input", required: false, bottomHelpMessage: "用户未指定时的默认值" },
-              { field: "defaultQuality", label: "默认质量", component: "Input", required: false, bottomHelpMessage: "auto/low/medium/high" },
-              { field: "defaultFormat", label: "默认格式", component: "Input", required: false, bottomHelpMessage: "png/jpeg/webp" },
-              { field: "defaultModeration", label: "默认审核", component: "Select", required: false, bottomHelpMessage: "auto/low", componentProps: { options: [{ label: "auto", value: "auto" }, { label: "low", value: "low" }] } },
-              { field: "timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
-              {
-                field: "channel",
-                label: "渠道选择",
-                component: "Select",
-                required: false,
-                bottomHelpMessage: "openai=主API(全参数), secondApi=2API(无quality/format/moderation)",
-                componentProps: {
-                  options: [
-                    { label: "主API（openai）", value: "openai" },
-                    { label: "2API（secondApi）", value: "secondApi" },
-                  ],
-                },
-              },
-              {
-                field: "moderation",
-                label: "内容审核",
-                component: "Select",
-                required: false,
-                bottomHelpMessage: "auto=正常审核, low=放宽",
-                componentProps: {
-                  options: [
-                    { label: "auto（正常）", value: "auto" },
-                    { label: "low（放宽）", value: "low" },
-                  ],
-                },
-              },
-              { field: "requirePermission", label: "需要权限", component: "Switch", required: false },
-              { field: "whitelist", label: "白名单群", component: "GSelectGroup", required: false, bottomHelpMessage: "只有这些群可以使用，留空不限制", componentProps: { multiple: true } },
-              { field: "blacklist", label: "黑名单群", component: "GSelectGroup", required: false, bottomHelpMessage: "这些群禁止使用", componentProps: { multiple: true } },
+              { field: "stream", label: "流式输出(仅chat)", component: "Switch", required: false },
             ],
           },
         },
+
+        // ==================== 修图设置 ====================
+        {
+          label: "修图设置",
+          component: "SOFT_GROUP_BEGIN",
+        },
+        {
+          field: "EditImage.channel",
+          label: "使用渠道",
+          component: "Input",
+          required: true,
+          bottomHelpMessage: "对应修图渠道中的名称",
+        },
+        { field: "EditImage.timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
+        { field: "EditImage.userLock", label: "用户锁", component: "Switch", required: false, bottomHelpMessage: "默认开启" },
+        {
+          field: "EditImage.moderation",
+          label: "内容审核",
+          component: "Select",
+          required: false,
+          componentProps: { options: [{ label: "auto（正常）", value: "auto" }, { label: "low（放宽）", value: "low" }] },
+        },
+        { field: "EditImage.defaultSize", label: "默认尺寸", component: "Input", required: false },
+        { field: "EditImage.defaultQuality", label: "默认质量", component: "Input", required: false },
+        { field: "EditImage.defaultFormat", label: "默认格式", component: "Input", required: false },
+        { field: "EditImage.defaultModeration", label: "默认审核", component: "Input", required: false },
+        { field: "EditImage.requirePermission", label: "需要权限", component: "Switch", required: false },
+        { field: "EditImage.whitelist", label: "白名单群", component: "GSelectGroup", required: false, componentProps: { multiple: true } },
+        { field: "EditImage.blacklist", label: "黑名单群", component: "GSelectGroup", required: false, componentProps: { multiple: true } },
         {
           field: "EditImage.tasks",
           label: "修图提示词",
-          bottomHelpMessage: "配置自定义图片编辑指令和提示词",
           component: "GSubForm",
           required: false,
           componentProps: {
@@ -215,53 +149,18 @@ export function supportGuoba() {
             ],
           },
         },
+
+        // ==================== 其他 ====================
         {
-          label: "2API渠道",
+          label: "其他",
           component: "SOFT_GROUP_BEGIN",
-        },
-        {
-          field: "SecondApi.enabled",
-          label: "启用2API",
-          component: "Switch",
-          required: false,
-        },
-        {
-          field: "SecondApi.baseURL",
-          label: "API地址",
-          component: "Input",
-          required: true,
-          bottomHelpMessage: "如 http://127.0.0.1:31970/v1",
-        },
-        {
-          field: "SecondApi.api",
-          label: "API Key",
-          component: "Input",
-          required: true,
-        },
-        {
-          field: "SecondApi.model",
-          label: "模型",
-          component: "Input",
-          required: false,
-          bottomHelpMessage: "默认 gpt-image-2",
         },
         {
           label: "web编辑器",
           component: "Divider",
         },
-        {
-          field: "webeditor.port",
-          label: "端口",
-          component: "InputNumber",
-          required: true,
-          componentProps: { min: 1, max: 65535 },
-        },
-        {
-          field: "webeditor.password",
-          label: "密码",
-          component: "Input",
-          required: true,
-        },
+        { field: "webeditor.port", label: "端口", component: "InputNumber", required: true, componentProps: { min: 1, max: 65535 } },
+        { field: "webeditor.password", label: "密码", component: "Input", required: true },
       ],
 
       getConfigData() {

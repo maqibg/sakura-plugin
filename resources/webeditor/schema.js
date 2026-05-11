@@ -20,12 +20,7 @@ const configSchema = {
     {
       name: "图片功能",
       icon: "🖼️",
-      configs: ["EditImage", "r18"],
-    },
-    {
-      name: "2API渠道",
-      icon: "2",
-      configs: ["SecondApi"],
+      configs: ["ImageChannels", "EditImage", "r18"],
     },
     {
       name: "其他",
@@ -37,10 +32,10 @@ const configSchema = {
   configNames: {
     AI: "AI对话",
     Channels: "AI渠道",
-    EditImage: "修图",
+    EditImage: "修图设置",
+    ImageChannels: "修图渠道",
     r18: "R18图片",
     roles: "AI人设",
-    SecondApi: "2API渠道",
     webeditor: "配置面板",
   },
 
@@ -64,46 +59,50 @@ const configSchema = {
 
     "r18.enable": { label: "启用群", type: "groupSelect", help: "影响所有图片功能" },
 
-    EditImage: {
-      label: "修图API配置",
-      type: "object",
-      help: "配置 OpenAI 兼容的图片生成 API（gpt-image-2 等）",
+    // ---- ImageChannels ----
+    "ImageChannels.openai": {
+      label: "修图渠道",
+      type: "array",
+      itemType: "object",
+      help: "配置修图 API 渠道，可添加多个",
       schema: {
-        model: { label: "模型名称", type: "text", required: true },
+        name: { label: "渠道名称", type: "text", required: true },
+        baseURL: { label: "API地址", type: "text", required: true },
         api: { label: "API Key", type: "text", required: true },
-        baseURL: { label: "API地址", type: "text", required: false, help: "默认 https://api.openai.com/v1" },
-        channel: {
-          label: "渠道选择",
-          type: "select",
-          required: false,
-          help: "openai=主API(支持全参数), secondApi=2API(不支持quality/format/moderation)",
-          options: [
-            { label: "主API", value: "openai" },
-            { label: "2API", value: "secondApi" },
-          ],
-        },
+        model: { label: "模型", type: "text", required: true },
         apiMode: {
-          label: "API模式(仅主API)",
+          label: "API模式",
           type: "select",
-          required: false,
-          help: "images/chat/responses 三种模式",
+          required: true,
+          help: "images/chat/responses/secondApi",
           options: [
             { label: "images（图片API）", value: "images" },
             { label: "chat（对话生图）", value: "chat" },
             { label: "responses（新版）", value: "responses" },
+            { label: "2API（自建代理）", value: "secondApi" },
           ],
         },
-        stream: { label: "流式输出(仅chat)", type: "boolean", required: false },
-        userLock: { label: "用户锁", type: "boolean", required: false },
-        timeout: { label: "超时(分钟)", type: "number", required: false, help: "默认5，最大120" },
-        moderation: { label: "内容审核", type: "select", required: false, options: [{ label: "auto", value: "auto" }, { label: "low", value: "low" }] },
-        defaultSize: { label: "默认尺寸", type: "text", required: false, help: "1024x1024" },
-        defaultQuality: { label: "默认质量", type: "text", required: false, help: "auto/low/medium/high" },
-        defaultFormat: { label: "默认格式", type: "text", required: false, help: "png/jpeg/webp" },
-        defaultModeration: { label: "默认审核", type: "text", required: false, help: "auto/low" },
-        requirePermission: { label: "需要权限", type: "boolean", required: false },
-        whitelist: { label: "白名单群", type: "groupSelect", required: false, help: "填空不限制" },
-        blacklist: { label: "黑名单群", type: "groupSelect", required: false, help: "这些群禁止使用" },
+        stream: { label: "流式输出(仅chat)", type: "boolean" },
+      },
+    },
+
+    // ---- EditImage ----
+    EditImage: {
+      label: "修图设置",
+      type: "object",
+      help: "修图功能配置，渠道在「修图渠道」中设置",
+      schema: {
+        channel: { label: "使用渠道", type: "text", required: true, help: "对应修图渠道中的名称" },
+        timeout: { label: "超时(分钟)", type: "number", help: "默认5，最大120" },
+        userLock: { label: "用户锁", type: "boolean", help: "防重复触发" },
+        moderation: { label: "内容审核", type: "select", options: [{ label: "auto", value: "auto" }, { label: "low", value: "low" }] },
+        defaultSize: { label: "默认尺寸", type: "text", help: "1024x1024" },
+        defaultQuality: { label: "默认质量", type: "text", help: "auto/low/medium/high" },
+        defaultFormat: { label: "默认格式", type: "text", help: "png/jpeg/webp" },
+        defaultModeration: { label: "默认审核", type: "text", help: "auto/low" },
+        requirePermission: { label: "需要权限", type: "boolean" },
+        whitelist: { label: "白名单群", type: "groupSelect", help: "填空不限制" },
+        blacklist: { label: "黑名单群", type: "groupSelect", help: "这些群禁止使用" },
         tasks: {
           label: "修图提示词",
           type: "array",
@@ -117,22 +116,7 @@ const configSchema = {
       },
     },
 
-    SecondApi: {
-      label: "2API渠道配置",
-      type: "object",
-      help: "自建代理服务（gpt-image-2），不支持 quality/format/moderation",
-      schema: {
-        enabled: { label: "启用", type: "boolean" },
-        baseURL: { label: "API地址", type: "text", required: true, help: "http://127.0.0.1:31970/v1" },
-        api: { label: "API Key", type: "text", required: true },
-        model: { label: "模型", type: "text", help: "默认 gpt-image-2" },
-      },
-    },
-    "SecondApi.enabled": { label: "启用2API", type: "boolean" },
-    "SecondApi.baseURL": { label: "API地址", type: "text" },
-    "SecondApi.api": { label: "API Key", type: "text" },
-    "SecondApi.model": { label: "模型", type: "text" },
-
+    // ---- Channels (AI) ----
     "Channels.openai": {
       label: "OpenAI",
       type: "array",
@@ -146,6 +130,7 @@ const configSchema = {
       },
     },
 
+    // ---- AI ----
     "AI.profiles": {
       label: "角色配置",
       type: "array",
@@ -161,24 +146,27 @@ const configSchema = {
       },
     },
     "AI.groupContextLength": { label: "群聊上下文长度", type: "number", min: 1 },
-    "AI.enableUserLock": { label: "是否启用用户锁", type: "boolean", help: "防消息并发" },
+    "AI.enableUserLock": { label: "用户锁", type: "boolean", help: "防消息并发" },
     "AI.requirePermission": { label: "需要权限", type: "boolean", help: "仅权限列表用户可触发" },
-    "AI.toolschannel": { label: "工具渠道", type: "channelSelect", help: "AI工具渠道，必须是gemini渠道" },
-    "AI.appschannel": { label: "应用渠道", type: "channelSelect", help: "杂项功能渠道" },
-    "AI.defaultchannel": { label: "默认渠道", type: "channelSelect", help: "备用渠道" },
+    "AI.toolschannel": { label: "工具渠道", type: "channelSelect" },
+    "AI.appschannel": { label: "应用渠道", type: "channelSelect" },
+    "AI.defaultchannel": { label: "默认渠道", type: "channelSelect" },
 
-    webeditor: { label: "配置面板", type: "object", schema: { port: { label: "端口", type: "number" }, password: { label: "密码", type: "text" } } },
-    "webeditor.port": { label: "端口", type: "number", help: "sakura服务端口", min: 1024, max: 65535 },
+    // ---- webeditor ----
+    "webeditor.port": { label: "端口", type: "number", min: 1024, max: 65535 },
     "webeditor.password": { label: "登录密码", type: "text" },
 
+    // ---- generic ----
+    enabled: { label: "启用", type: "boolean" },
     port: { label: "端口", type: "number", min: 1024, max: 65535 },
     baseURL: { label: "API地址", type: "text" },
     api: { label: "API密钥", type: "text" },
-    prompt: { label: "提示词", type: "text" },
-    enabled: { label: "启用", type: "boolean" },
-    trigger: { label: "触发词", type: "text" },
     Channel: { label: "使用渠道", type: "text" },
+    channel: { label: "使用渠道", type: "text" },
+    prompt: { label: "提示词", type: "text" },
+    trigger: { label: "触发词", type: "text" },
     Prompt: { label: "预设提示词", type: "textarea" },
+    stream: { label: "流式输出", type: "boolean" },
   },
 }
 

@@ -134,61 +134,7 @@ export class EditImage extends plugin {
       return true
     }
 
-    if (this.task?.channel === "secondApi") {
-      return this.secondApiHandler(e)
-    }
-
     return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, moderation })
-  }
-
-  async secondApiHandler(e) {
-    const msg = e.msg.replace(/^#?2生图/, "").trim()
-    const imageUrls = await getImg(e, true)
-    const promptText = msg
-
-    if (!promptText) {
-      await this.reply("请告诉我你想生成什么图片哦~", true, { recallMsg: 10 })
-      return true
-    }
-
-    const secondConfig = Setting.getConfig("SecondApi")
-    if (!secondConfig?.enabled || !secondConfig.api) {
-      await this.reply("2API 渠道未启用，请在 SecondApi.yaml 中配置", true, { recallMsg: 10 })
-      return true
-    }
-
-    if (e.isGroup && typeof e.group?.setMsgEmojiLike === "function") {
-      await e.group.setMsgEmojiLike(e.message_id, "124")
-    } else {
-      await this.reply("🎨 正在进行创作(2API), 请稍候...", false, { recallMsg: 10 })
-    }
-
-    const client = new OpenAIImageClient(secondConfig)
-    const hasImage = imageUrls && imageUrls.length > 0
-
-    try {
-      const results = hasImage
-        ? await client.editSimple(promptText, imageUrls)
-        : await client.generateSimple(promptText)
-
-      if (results && results.length > 0) {
-        for (const img of results) {
-          if (img.dataUrl) {
-            const b64 = img.dataUrl.split(",")[1]
-            await e.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
-          } else if (img.url) {
-            await e.reply(segment.image(img.url))
-          }
-        }
-      } else {
-        await this.reply("2API 生成失败，未返回有效内容", true, { recallMsg: 10 })
-      }
-    } catch (error) {
-      logger.error(`[2API] 图片生成失败:`, error)
-      await this.reply(`2API 创作失败: ${error.message}`, true, { recallMsg: 10 })
-    }
-
-    return true
   }
 
   async dynamicImageHandler(e, matchedTask, match) {
@@ -210,6 +156,21 @@ export class EditImage extends plugin {
     return this._processAndCallAPI(e, finalPrompt, imageUrls, { size, quality, outputFormat, moderation })
   }
 
+  _getChannelConfig() {
+    const config = this.task
+    const channelName = config?.channel || "default"
+    const channelsConfig = Setting.getConfig("ImageChannels")
+    const channelList = channelsConfig?.openai || []
+    const channel = channelList.find(c => c.name === channelName)
+
+    if (!channel) {
+      logger.error(`[ImageEdit] 渠道 "${channelName}" 未找到，可用渠道: ${channelList.map(c => c.name).join(", ")}`)
+      return null
+    }
+
+    return { ...config, ...channel }
+  }
+
   async _processAndCallAPI(e, promptText, imageUrls, options = {}) {
     if (e.isGroup && typeof e.group?.setMsgEmojiLike === "function") {
       await e.group.setMsgEmojiLike(e.message_id, "124")
@@ -217,9 +178,9 @@ export class EditImage extends plugin {
       await this.reply("🎨 正在进行创作, 请稍候...", false, { recallMsg: 10 })
     }
 
-    const imageConfig = this.task
+    const imageConfig = this._getChannelConfig()
     if (!imageConfig || !imageConfig.api) {
-      await this.reply("配置错误：未配置 EditImage 的 API Key", true, { recallMsg: 10 })
+      await this.reply("配置错误：修图渠道未配置或渠道名不正确", true, { recallMsg: 10 })
       return true
     }
 
@@ -228,9 +189,28 @@ export class EditImage extends plugin {
     try {
       const client = new OpenAIImageClient(imageConfig)
       const apiMode = imageConfig.apiMode || "images"
+      const stream = imageConfig.stream !== false
       let results
 
-      if (apiMode === "responses") {
+      if (apiMode === "secondApi") {
+        results = hasImage
+          ? await client.editSimple(promptText, imageUrls, options)
+          : await client.generateSimple(promptText, options)
+      } else if (apiMode === "chat") {
+        const chatResult = await client.generateWithChat(promptText, imageUrls, { ...options, stream })
+        if (chatResult.stream) {
+          const images = await this._processChatStream(e, chatResult)
+          if (images.length > 0) {
+            results = images
+          } else {
+            logger.info("[ImageEdit] 流式未返回图片，尝试非流式重试...")
+            const retry = await client.generateWithChat(promptText, imageUrls, { ...options, stream: false })
+            results = Array.isArray(retry) ? retry : []
+          }
+        } else {
+          results = chatResult
+        }
+      } else if (apiMode === "responses") {
         results = await client.generateWithResponses(promptText, imageUrls, options)
       } else if (hasImage) {
         results = await client.edit(promptText, imageUrls, options)

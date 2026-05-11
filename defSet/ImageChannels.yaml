@@ -1,0 +1,7 @@
+openai:
+  - name: default
+    baseURL: "https://api.openai.com/v1"
+    api: "请填写 API Key"
+    model: "gpt-image-2"
+    apiMode: images  # images / chat / responses / secondApi
+    stream: false    # 仅 chat 模式有效
