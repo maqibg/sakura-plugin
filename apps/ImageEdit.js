@@ -160,8 +160,8 @@ export class EditImage extends plugin {
     const channel = channelList.find(c => c.name === channelName)
 
     if (!channel) {
-      logger.error(`[ImageEdit] 渠道 "${channelName}" 未找到，可用渠道: ${channelList.map(c => c.name).join(", ")}`)
-      return null
+      const names = channelList.map(c => c.name).join(", ") || "(无)"
+      throw new Error(`修图渠道 "${channelName}" 未找到，可用: ${names}`)
     }
 
     return { ...config, ...channel }
@@ -229,8 +229,9 @@ export class EditImage extends plugin {
         await this.reply("生成失败，未返回有效内容", true, { recallMsg: 10 })
       }
     } catch (error) {
+      const errMsg = error.name === "ImageAPIError" ? error.message : `未知错误: ${error.message}`
       logger.error(`图片生成失败:`, error)
-      await this.reply(`生成失败: ${error.message}`, true, { recallMsg: 10 })
+      await this.reply(`生成失败: ${errMsg}`, true, { recallMsg: 10 })
     }
 
     return true
