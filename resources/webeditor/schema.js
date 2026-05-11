@@ -96,6 +96,18 @@ const configSchema = {
         requirePermission: { label: "需要权限", type: "boolean", required: false },
         whitelist: { label: "白名单群", type: "groupSelect", required: false, help: "填空不限制" },
         blacklist: { label: "黑名单群", type: "groupSelect", required: false, help: "这些群禁止使用" },
+        secondApi: {
+          label: "2API渠道",
+          type: "object",
+          required: false,
+          help: "自建代理，#2生图 触发",
+          schema: {
+            enabled: { label: "启用", type: "boolean" },
+            baseURL: { label: "API地址", type: "text", required: true },
+            api: { label: "API Key", type: "text", required: true },
+            model: { label: "模型", type: "text", help: "默认 gpt-image-2" },
+          },
+        },
         defaultSize: { label: "默认尺寸", type: "text", required: false, help: "1024x1024" },
         defaultQuality: { label: "默认质量", type: "text", required: false, help: "auto/low/medium/high" },
         defaultFormat: { label: "默认格式", type: "text", required: false, help: "png/jpeg/webp" },
