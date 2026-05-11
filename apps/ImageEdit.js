@@ -1,4 +1,4 @@
-import { OpenAIImageClient } from "../lib/AIUtils/OpenAIImageClient.js"
+﻿import { OpenAIImageClient } from "../lib/AIUtils/OpenAIImageClient.js"
 import { getImg, bufferToFile } from "../lib/utils.js"
 import Setting from "../lib/setting.js"
 import cfg from "../../../lib/config/config.js"
@@ -171,7 +171,7 @@ export class EditImage extends plugin {
     if (e.isGroup && typeof e.group?.setMsgEmojiLike === "function") {
       await e.group.setMsgEmojiLike(e.message_id, "124")
     } else {
-      await this.reply("🎨 正在进行创作, 请稍候...", false, { recallMsg: 10 })
+      await this.reply("🎨 正在进行生成, 请稍候...", false, { recallMsg: 10 })
     }
 
     const imageConfig = this._getChannelConfig()
@@ -230,7 +230,7 @@ export class EditImage extends plugin {
       }
     } catch (error) {
       logger.error(`图片生成失败:`, error)
-      await this.reply(`创作失败: ${error.message}`, true, { recallMsg: 10 })
+      await this.reply(`生成失败: ${error.message}`, true, { recallMsg: 10 })
     }
 
     return true
