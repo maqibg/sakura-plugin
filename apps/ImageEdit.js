@@ -211,7 +211,10 @@ export class EditImage extends plugin {
 
     const next = EditImage.queue.shift()
     const position = EditImage.queue.length ? `，前方还有 ${EditImage.queue.length} 人` : "，马上进入生成"
-    next.e.reply(`排队轮到你了${position}`, true)
+    const msg = next.e.isGroup
+      ? [segment.at(next.e.user_id), ` 排队轮到你了${position}`]
+      : `排队轮到你了${position}`
+    next.e.reply(msg, true)
 
     EditImage.running++
     this._doProcessAPI(next.e, next.promptText, next.imageUrls, next.options).finally(() => {
