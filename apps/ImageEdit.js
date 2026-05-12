@@ -211,10 +211,7 @@ export class EditImage extends plugin {
 
     const next = EditImage.queue.shift()
     const position = EditImage.queue.length ? `，前方还有 ${EditImage.queue.length} 人` : "，马上进入生成"
-    const msg = next.e.isGroup
-      ? [segment.at(next.e.user_id), ` 排队轮到你了${position}`]
-      : `排队轮到你了${position}`
-    next.e.reply(msg, true)
+    next.e.reply(`排队轮到你了${position}`, true, { recallMsg: 60 })
 
     EditImage.running++
     this._doProcessAPI(next.e, next.promptText, next.imageUrls, next.options).finally(() => {
@@ -227,7 +224,7 @@ export class EditImage extends plugin {
     if (e.isGroup && typeof e.group?.setMsgEmojiLike === "function") {
       await e.group.setMsgEmojiLike(e.message_id, "124")
     } else {
-      await this.reply("🎨 正在进行生成, 请稍候...", false, { recallMsg: 10 })
+      await this.reply("🎨 正在进行生成, 请稍候...", false, { recallMsg: 60 })
     }
 
     const channels = this._getChannels()
@@ -286,6 +283,13 @@ export class EditImage extends plugin {
               await this.reply(segment.image(img.url))
             }
           }
+
+          if (e.isGroup) {
+            await this.reply([segment.at(e.user_id), " 您的图片已生成"], true, { recallMsg: 60 })
+          } else {
+            await this.reply("您的图片已生成", true, { recallMsg: 60 })
+          }
+
           return true
         }
 
