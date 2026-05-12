@@ -107,7 +107,7 @@ export class EditImage extends plugin {
 
   // #参数名（值） or #参数名(值) — supports Chinese & English parens
   parseArgs(msg) {
-    const paramRe = /#(尺寸|质量|格式|审核)[（(]([^）)]+)[）)]/gi
+    const paramRe = /#(尺寸|质量|格式|审核|数量)[（(]([^）)]+)[）)]/gi
     const params = {}
     let promptText = msg
 
@@ -120,6 +120,7 @@ export class EditImage extends plugin {
         case "质量": params.quality = value; break
         case "格式": params.outputFormat = value; break
         case "审核": params.moderation = value; break
+        case "数量": params.n = Math.min(Math.max(parseInt(value) || 1, 1), 10); break
       }
       promptText = promptText.replace(m[0], "")
     }
