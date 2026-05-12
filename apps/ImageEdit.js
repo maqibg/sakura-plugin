@@ -56,12 +56,16 @@ export class EditImage extends plugin {
           : `sakura:imageedit:lock:private:${e.user_id}`)
       : null
 
-    if (lockKey) {
+    const concurrency = this.task?.concurrency || 0
+    const willQueue = concurrency > 0 && EditImage.running >= concurrency
+
+    if (lockKey && !willQueue) {
       if (await redis.get(lockKey)) {
         logger.info(`[ImageEdit] 用户 ${e.user_id} 的上一条生图仍在处理中，本次触发已忽略。`)
-        return false
+        this.reply("你的上一条生图仍在生成中，请稍后再试~", true, { recallMsg: 10 })
+        return true
       }
-      await redis.set(lockKey, "1", { EX: 120 })
+      await redis.set(lockKey, "1", { EX: 60 })
     }
 
     try {
