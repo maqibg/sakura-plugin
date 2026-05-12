@@ -65,7 +65,7 @@ export class EditImage extends plugin {
         this.reply("你的上一条生图仍在生成中，请稍后再试~", true, { recallMsg: 10 })
         return true
       }
-      await redis.set(lockKey, "1", { EX: 60 })
+      await redis.set(lockKey, "1", { EX: Math.max(60, (this.task?.timeout || 5) * 60 + 30) })
     }
 
     try {
