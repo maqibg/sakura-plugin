@@ -1,4 +1,5 @@
 channel: default  # 渠道名，用 | 分隔可故障转移 如 default|my2api|backup
+concurrency: 0  # 全局并发限制，0=无限制
 timeout: 5  # 超时分钟数，最大120
 userLock: true  # 用户锁，同一用户上条生图处理完之前忽略新请求
 moderation: auto  # auto=正常审核, low=放宽审核(二次元/艺术类)

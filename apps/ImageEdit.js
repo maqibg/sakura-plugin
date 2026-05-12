@@ -5,6 +5,9 @@ import cfg from "../../../lib/config/config.js"
 import { PermissionManager } from "../lib/PermissionManager.js"
 
 export class EditImage extends plugin {
+
+  static running = 0
+  static queue = []
   constructor() {
     super({
       name: "AI图像编辑",
@@ -178,6 +181,42 @@ export class EditImage extends plugin {
   }
 
   async _processAndCallAPI(e, promptText, imageUrls, options = {}) {
+    const limit = this.task?.concurrency || 0
+    if (limit > 0 && EditImage.running >= limit) {
+      EditImage.queue.push({ e, promptText, imageUrls, options, resolve: null })
+      const position = EditImage.queue.length
+      await this.reply(`当前已达全局并发限制 (${limit})，排队中，当前排第 ${position} 名`, true)
+      return new Promise((resolve) => {
+        EditImage.queue[EditImage.queue.length - 1].resolve = resolve
+      })
+    }
+
+    EditImage.running++
+    try {
+      return await this._doProcessAPI(e, promptText, imageUrls, options)
+    } finally {
+      EditImage.running--
+      this._processQueue()
+    }
+  }
+
+  _processQueue() {
+    if (EditImage.queue.length === 0) return
+    const limit = this.task?.concurrency || 0
+    if (limit > 0 && EditImage.running >= limit) return
+
+    const next = EditImage.queue.shift()
+    const position = EditImage.queue.length ? `，前方还有 ${EditImage.queue.length} 人` : "，马上进入生成"
+    next.e.reply(`排队轮到你了${position}`, true)
+
+    EditImage.running++
+    this._doProcessAPI(next.e, next.promptText, next.imageUrls, next.options).finally(() => {
+      EditImage.running--
+      this._processQueue()
+    })
+  }
+
+  async _doProcessAPI(e, promptText, imageUrls, options = {}) {
     if (e.isGroup && typeof e.group?.setMsgEmojiLike === "function") {
       await e.group.setMsgEmojiLike(e.message_id, "124")
     } else {

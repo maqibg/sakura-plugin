@@ -92,7 +92,8 @@ const configSchema = {
       type: "object",
       help: "修图功能配置，渠道在「修图渠道」中设置",
       schema: {
-        channel: { label: "使用渠道", type: "text", required: true, help: "对应修图渠道中的名称" },
+        channel: { label: "使用渠道", type: "text", required: true, help: "对应修图渠道中的名称，|分隔可故障转移" },
+        concurrency: { label: "全局并发限制", type: "number", required: false, help: "0=无限制" },
         timeout: { label: "超时(分钟)", type: "number", help: "默认5，最大120" },
         userLock: { label: "用户锁", type: "boolean", help: "防重复触发" },
         moderation: { label: "内容审核", type: "select", options: [{ label: "auto", value: "auto" }, { label: "low", value: "low" }] },

@@ -118,8 +118,9 @@ export function supportGuoba() {
           label: "使用渠道",
           component: "Input",
           required: true,
-          bottomHelpMessage: "对应修图渠道中的名称",
+          bottomHelpMessage: "| 分隔可故障转移",
         },
+        { field: "EditImage.concurrency", label: "全局并发限制", component: "InputNumber", required: false, bottomHelpMessage: "0=无限制", componentProps: { min: 0, max: 50 } },
         { field: "EditImage.timeout", label: "超时(分钟)", component: "InputNumber", required: false, bottomHelpMessage: "默认5，最大120", componentProps: { min: 1, max: 120 } },
         { field: "EditImage.userLock", label: "用户锁", component: "Switch", required: false, bottomHelpMessage: "默认开启" },
         {
