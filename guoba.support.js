@@ -93,17 +93,27 @@ export function supportGuoba() {
                 label: "API模式",
                 component: "Select",
                 required: true,
-                bottomHelpMessage: "images/chat/responses/secondApi",
+                bottomHelpMessage: "images/chat-compatible/secondApi",
                 componentProps: {
                   options: [
                     { label: "images（图片API）", value: "images" },
-                    { label: "chat（对话生图）", value: "chat" },
-                    { label: "responses（新版）", value: "responses" },
+                    { label: "chat-compatible（厂商扩展）", value: "chat-compatible" },
                     { label: "2API（自建代理）", value: "secondApi" },
                   ],
                 },
               },
-              { field: "stream", label: "流式输出(仅chat)", component: "Switch", required: false },
+              {
+                field: "chatProfile",
+                label: "Chat适配规格",
+                component: "Select",
+                required: false,
+                bottomHelpMessage: "chat-compatible 模式必填",
+                componentProps: {
+                  options: [
+                    { label: "content-parts（图片分片）", value: "content-parts" },
+                  ],
+                },
+              },
             ],
           },
         },

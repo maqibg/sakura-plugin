@@ -3,5 +3,5 @@ openai:
     baseURL: "https://api.openai.com/v1"
     api: "请填写 API Key"
     model: "gpt-image-2"
-    apiMode: images  # images / chat / responses / secondApi
-    stream: false    # 仅 chat 模式有效
+    apiMode: images  # images / chat-compatible / secondApi
+    # chatProfile: content-parts  # chat-compatible 必填

@@ -47,6 +47,27 @@ function showLoadingUI(message = "加载中...", tip = "") {
     `
 }
 
+function renderCategoryActions(categoryName) {
+  if (categoryName !== "其他") return ""
+
+  return `
+        <div class="config-section">
+            <div class="config-section-header">
+                <h3>图片缓存</h3>
+            </div>
+            <div class="form-group">
+                <label>临时图片</label>
+                <div class="form-control-wrapper">
+                    <button class="btn btn-danger" type="button" onclick="clearImageCache(this)">
+                        🗑️ 一键清理图片缓存
+                    </button>
+                    <p class="help-text">仅清理插件 data/tmp 目录中生成或下载的临时图片，不会影响配置和其他数据。</p>
+                </div>
+            </div>
+        </div>
+    `
+}
+
 async function apiRequest(url, options = {}) {
   try {
     console.log("[sakura] API 请求:", API_BASE + url)
@@ -253,6 +274,7 @@ function renderCategoryPage(categoryName, configsData) {
                 <div class="editor-container active">
                     <div class="visual-editor" id="visualEditor">
                         ${configsData.map(({ name, data }) => renderConfigSection(name, data)).join("")}
+                        ${renderCategoryActions(categoryName)}
                     </div>
                 </div>
             `
@@ -1954,6 +1976,40 @@ async function resetConfig() {
     showToast("重置成功！", "success")
     await loadConfig(currentConfig)
   } catch (error) {}
+}
+
+async function clearImageCache(button) {
+  if (!confirm("确定要清理已下载和生成的临时图片吗？")) return
+
+  const originalContent = button.innerHTML
+  button.disabled = true
+  button.textContent = "清理中..."
+
+  try {
+    const result = await apiRequest("/api/cache/images", { method: "DELETE" })
+    const deletedCount = result?.deletedCount ?? 0
+    const reclaimedBytes = result?.reclaimedBytes ?? 0
+
+    if (deletedCount === 0) {
+      showToast("图片缓存已经是空的", "success")
+    } else {
+      showToast(`已清理 ${deletedCount} 张图片，释放 ${formatBytes(reclaimedBytes)}`, "success")
+    }
+  } catch (error) {
+    // apiRequest 已统一展示错误提示。
+  } finally {
+    button.disabled = false
+    button.innerHTML = originalContent
+  }
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B"
+
+  const units = ["B", "KB", "MB", "GB"]
+  const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const value = bytes / 1024 ** unitIndex
+  return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }
 
 function escapeHtml(text) {

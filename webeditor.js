@@ -5,6 +5,7 @@ import path from "node:path"
 import os from "node:os"
 import { fileURLToPath } from "node:url"
 import setting from "./lib/setting.js"
+import { clearImageCache as clearImageCacheFiles } from "./lib/ImageCache.js"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -105,6 +106,22 @@ class WebEditor {
   }
 
   setupRoutes() {
+    this.app.delete("/api/cache/images", async (req, res) => {
+      const token = req.headers.authorization?.split(" ")[1]
+      if (token !== Buffer.from(this.password).toString("base64")) {
+        return res.status(401).json({ success: false, error: "未登录" })
+      }
+
+      try {
+        const result = await clearImageCacheFiles()
+        res.json({ success: true, data: result })
+      } catch (error) {
+        const log = global.logger || console
+        log.error(`[sakura-plugin] 清理图片缓存失败: ${error.message}`)
+        res.status(500).json({ success: false, error: `清理图片缓存失败: ${error.message}` })
+      }
+    })
+
     this.app.get("/api/groups", (req, res) => {
       try {
         const groups = []

@@ -74,15 +74,21 @@ const configSchema = {
           label: "API模式",
           type: "select",
           required: true,
-          help: "images/chat/responses/secondApi",
+          help: "images/chat-compatible/secondApi",
           options: [
             { label: "images（图片API）", value: "images" },
-            { label: "chat（对话生图）", value: "chat" },
-            { label: "responses（新版）", value: "responses" },
+            { label: "chat-compatible（厂商扩展）", value: "chat-compatible" },
             { label: "2API（自建代理）", value: "secondApi" },
           ],
         },
-        stream: { label: "流式输出(仅chat)", type: "boolean" },
+        chatProfile: {
+          label: "Chat适配规格",
+          type: "select",
+          help: "chat-compatible 模式必填",
+          options: [
+            { label: "content-parts（图片分片）", value: "content-parts" },
+          ],
+        },
       },
     },
 

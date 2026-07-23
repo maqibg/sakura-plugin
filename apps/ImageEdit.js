@@ -1,5 +1,6 @@
 ﻿import { OpenAIImageClient } from "../lib/AIUtils/OpenAIImageClient.js"
-import { getImg, bufferToFile } from "../lib/utils.js"
+import { ChatCompatibleImageAdapter } from "../lib/AIUtils/ChatCompatibleImageAdapter.js"
+import { getImg, dataUrlToFile, imageUrlToFile } from "../lib/utils.js"
 import Setting from "../lib/setting.js"
 import cfg from "../../../lib/config/config.js"
 import { PermissionManager } from "../lib/PermissionManager.js"
@@ -120,7 +121,7 @@ export class EditImage extends plugin {
         case "质量": params.quality = value; break
         case "格式": params.outputFormat = value; break
         case "审核": params.moderation = value; break
-        case "数量": params.n = Math.min(Math.max(parseInt(value) || 1, 1), 10); break
+        case "数量": params.n = Number(value); break
       }
       promptText = promptText.replace(m[0], "")
     }
@@ -130,7 +131,7 @@ export class EditImage extends plugin {
 
   async editImageHandler(e) {
     const rawMsg = e.msg.replace(/^#?生图/, "").trim()
-    const { size, quality, outputFormat, moderation, promptText } = this.parseArgs(rawMsg)
+    const { size, quality, outputFormat, moderation, n, promptText } = this.parseArgs(rawMsg)
     const imageUrls = await getImg(e, true)
 
     if (!promptText) {
@@ -138,7 +139,7 @@ export class EditImage extends plugin {
       return true
     }
 
-    return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, moderation })
+    return this._processAndCallAPI(e, promptText, imageUrls, { size, quality, outputFormat, moderation, n })
   }
 
   async dynamicImageHandler(e, matchedTask, match) {
@@ -147,7 +148,7 @@ export class EditImage extends plugin {
 
     const matchedStr = match[0]
     const remainingMsg = e.msg.slice(matchedStr.length).trim()
-    const { size, quality, outputFormat, moderation, promptText: userPrompt } = this.parseArgs(remainingMsg)
+    const { size, quality, outputFormat, moderation, n, promptText: userPrompt } = this.parseArgs(remainingMsg)
 
     let finalPrompt = matchedTask.prompt || ""
     if (finalPrompt && match) {
@@ -157,7 +158,7 @@ export class EditImage extends plugin {
       finalPrompt = finalPrompt ? `${finalPrompt} ${userPrompt}` : userPrompt
     }
 
-    return this._processAndCallAPI(e, finalPrompt, imageUrls, { size, quality, outputFormat, moderation })
+    return this._processAndCallAPI(e, finalPrompt, imageUrls, { size, quality, outputFormat, moderation, n })
   }
 
   _getChannels() {
@@ -242,35 +243,28 @@ export class EditImage extends plugin {
       }
 
       try {
-        const client = new OpenAIImageClient(imageConfig)
         const apiMode = imageConfig.apiMode || "images"
-        const stream = imageConfig.stream !== false
         let results
 
         if (apiMode === "secondApi") {
+          const client = new OpenAIImageClient(imageConfig)
           results = hasImage
             ? await client.editSimple(promptText, imageUrls, options)
             : await client.generateSimple(promptText, options)
+        } else if (apiMode === "chat-compatible") {
+          const adapter = new ChatCompatibleImageAdapter(imageConfig)
+          results = await adapter.generate(promptText, imageUrls, options)
+        } else if (apiMode === "images") {
+          const client = new OpenAIImageClient(imageConfig)
+          results = hasImage
+            ? await client.edit(promptText, imageUrls, options)
+            : await client.generate(promptText, options)
         } else if (apiMode === "chat") {
-          const chatResult = await client.generateWithChat(promptText, imageUrls, { ...options, stream })
-          if (chatResult.stream) {
-            const images = await this._processChatStream(e, chatResult)
-            if (images.length > 0) {
-              results = images
-            } else {
-              logger.info("[ImageEdit] 流式未返回图片，尝试非流式重试...")
-              const retry = await client.generateWithChat(promptText, imageUrls, { ...options, stream: false })
-              results = Array.isArray(retry) ? retry : []
-            }
-          } else {
-            results = chatResult
-          }
+          throw new Error("apiMode: chat 已移除，请改用 chat-compatible 并配置 chatProfile")
         } else if (apiMode === "responses") {
-          results = await client.generateWithResponses(promptText, imageUrls, options)
-        } else if (hasImage) {
-          results = await client.edit(promptText, imageUrls, options)
+          throw new Error("apiMode: responses 已移除，请改用 images")
         } else {
-          results = await client.generate(promptText, options)
+          throw new Error(`不支持的修图 apiMode: ${apiMode}`)
         }
 
         if (results && results.length > 0) {
@@ -278,10 +272,10 @@ export class EditImage extends plugin {
             if (img.text) {
               await this.reply(img.text)
             } else if (img.dataUrl) {
-              const b64 = img.dataUrl.split(",")[1]
-              await this.reply(segment.image(await bufferToFile(Buffer.from(b64, "base64"))))
+              await this.reply(segment.image(await dataUrlToFile(img.dataUrl)))
             } else if (img.url) {
-              await this.reply(segment.image(img.url))
+              const timeoutMs = (imageConfig.timeout || 5) * 60000
+              await this.reply(segment.image(await imageUrlToFile(img.url, { timeoutMs })))
             }
           }
 
