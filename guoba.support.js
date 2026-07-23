@@ -1,5 +1,6 @@
 import lodash from "lodash"
 import setting from "./lib/setting.js"
+import { clearImageCache as clearImageCacheFiles } from "./lib/ImageCache.js"
 
 export function supportGuoba() {
   return {
@@ -172,7 +173,44 @@ export function supportGuoba() {
         },
         { field: "webeditor.port", label: "端口", component: "InputNumber", required: true, componentProps: { min: 1, max: 65535 } },
         { field: "webeditor.password", label: "密码", component: "Input", required: true },
+        {
+          label: "图片缓存",
+          bottomHelpMessage: "仅清理插件 data/tmp 目录中生成或下载的临时图片，不影响配置和其他数据",
+          component: "GButtons",
+          componentProps: {
+            buttons: [
+              {
+                label: "一键清理图片缓存",
+                action: "clearImageCache",
+                danger: true,
+                icon: "ant-design:delete-outlined",
+                confirm: {
+                  title: "确认清理图片缓存",
+                  content: "确定要清理已下载和生成的临时图片吗？",
+                  okText: "清理",
+                  cancelText: "取消",
+                },
+              },
+            ],
+          },
+        },
       ],
+
+      actions: {
+        async clearImageCache(_args, { Result }) {
+          try {
+            const result = await clearImageCacheFiles()
+            const message = result.deletedCount > 0
+              ? `已清理 ${result.deletedCount} 张图片缓存`
+              : "图片缓存已经是空的"
+            return Result.ok(result, message)
+          } catch (error) {
+            const log = global.logger || console
+            log.error(`[sakura-plugin] Guoba 清理图片缓存失败: ${error.message}`)
+            return Result.error(`清理图片缓存失败: ${error.message}`)
+          }
+        },
+      },
 
       getConfigData() {
         return setting.merge()
